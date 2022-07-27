@@ -3,7 +3,7 @@ const Currency = require('../models/Currency');
 const router = Router();
 
 // /api/tools/currency
-router.get('/currency', async (_req, res) => {
+router.get('/', async (_req, res) => {
     try {
         const currencies = await Currency.find();
 

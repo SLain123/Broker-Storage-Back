@@ -15,11 +15,11 @@ router.post(
             min: 6,
         }),
         check('nickName', 'User nick name is missing').notEmpty(),
+        check('defaultCurrency', 'Default currency was not recived').notEmpty(),
     ],
     async (req, res) => {
         try {
             const errors = validationResult(req);
-
             if (!errors.isEmpty()) {
                 return res.status(400).json({
                     errors: errors.array(),
@@ -27,32 +27,35 @@ router.post(
                 });
             }
 
-            const { email, password, nickName } = req.body;
+            const { email, password, nickName, defaultCurrency } = req.body;
+
             const candidateByMail = await User.findOne({ email });
-            const candidateByNick = await User.findOne({ nickName });
+            if (candidateByMail) {
+                return res.status(400).json({
+                    errors: [
+                        {
+                            msg: 'User email already exists!',
+                            value: email,
+                            param: 'email',
+                        },
+                    ],
+                });
+            }
 
-            if (candidateByMail || candidateByNick) {
-                candidateByMail &&
-                    res.status(400).json({
-                        errors: [
-                            {
-                                msg: 'User email already exists!',
-                                value: email,
-                                param: 'email',
-                            },
-                        ],
-                    });
-
-                candidateByNick &&
-                    res.status(400).json({
-                        errors: [
-                            {
-                                msg: 'User nick already exists!',
-                                value: nickName,
-                                param: 'nickName',
-                            },
-                        ],
-                    });
+            if (
+                !defaultCurrency._id ||
+                !defaultCurrency.title ||
+                !defaultCurrency.ticker
+            ) {
+                return res.status(400).json({
+                    errors: [
+                        {
+                            msg: 'Currency have wrong format',
+                            value: defaultCurrency,
+                            param: 'defaultCurrency',
+                        },
+                    ],
+                });
             }
 
             const hashedPassword = await bcrypt.hash(password, 11);
@@ -61,8 +64,13 @@ router.post(
                 password: hashedPassword,
                 nickName,
                 avatar: null,
+                role: 'user',
+                defaultCurrency,
+                brokerCounts: [],
+                separatelyStoсks: [],
+                activeStoсks: [],
+                relatedPayments: [],
             });
-
             await user.save();
 
             res.status(201).json({ message: 'User was create!' });
@@ -79,7 +87,7 @@ router.post(
         check('email', 'Type correct email').isEmail(),
         check('password', 'Type password').exists(),
     ],
-    async (req, res) => {   
+    async (req, res) => {
         try {
             const errors = validationResult(req);
 
@@ -128,7 +136,11 @@ router.post(
                 },
             );
 
-            res.json({ token, userId: user.id, message: 'Success!' });
+            res.json({
+                token,
+                userId: user.id,
+                message: 'Success!',
+            });
         } catch (e) {
             res.status(500).json({ message: 'Something was wrong...' });
         }

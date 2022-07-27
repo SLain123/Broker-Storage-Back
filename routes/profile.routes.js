@@ -7,7 +7,9 @@ const auth = require('../middleware/auth.middleware');
 // /api/profile
 router.get('/', auth, async (req, res) => {
     try {
-        const user = await User.findOne({ _id: req.user.userId });
+        const user = await User.findOne({ _id: req.user.userId })
+            .populate('defaultCurrency')
+            .populate({ path: 'brokerCounts', populate: { path: 'currency' } });
 
         if (!user) {
             return res.status(400).json({
@@ -19,11 +21,14 @@ router.get('/', auth, async (req, res) => {
             });
         }
 
-        const { nickName, avatar } = user;
+        const { nickName, avatar, defaultCurrency, brokerCounts } = user;
+      
         return res.json({
             message: 'User found',
             nickName,
             avatar,
+            defaultCurrency,
+            brokerCounts,
         });
     } catch (e) {
         res.status(500).json({ message: 'Something was wrong...' });
