@@ -7,13 +7,13 @@ const auth = require('../middleware/auth.middleware');
 // /api/profile
 router.get('/', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId)
+        const result = await User.findById(req.user.userId)
             .populate('defaultCurrency')
             .populate({
                 path: 'brokerAccounts',
                 populate: { path: 'currency' },
             });
-        if (!user) {
+        if (!result) {
             return res.status(400).json({
                 errors: [
                     {
@@ -23,7 +23,7 @@ router.get('/', auth, async (req, res) => {
             });
         }
 
-        const { nickName, avatar, defaultCurrency, brokerAccounts } = user;
+        const { nickName, avatar, defaultCurrency, brokerAccounts } = result;
 
         return res.json({
             message: 'User found',
@@ -54,10 +54,10 @@ router.post(
 
             const { nickName } = req.body;
 
-            const resultUser = await User.findByIdAndUpdate(req.user.userId, {
+            const result = await User.findByIdAndUpdate(req.user.userId, {
                 nickName,
             });
-            if (!resultUser) {
+            if (!result) {
                 return res.status(400).json({
                     errors: [
                         {
