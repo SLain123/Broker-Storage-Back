@@ -3,37 +3,10 @@ const { Schema, model } = require('mongoose');
 const broker = new Schema({
     title: { type: String, required: true },
     currency: { type: Schema.ObjectId, ref: 'Currency', required: true },
-    sumBalance: { type: Number, required: true },
     cash: { type: Number, required: true },
     sumStokes: { type: Number, required: true },
-});
-
-const stock = new Schema({
-    buyDate: { type: Date, required: true },
-    title: { type: String, required: true },
-    count: { type: Number, required: true },
-    pricePerSingle: { type: Number, required: true },
-    priceSumWithFee: { type: Number, required: true },
-    pricePerSingleWithFee: { type: Number, required: true },
-    fee: { type: Number, required: true },
-    currency: {
-        type: Schema.ObjectId,
-        ref: 'Currency',
-        required: true,
-    },
-    broker: { type: broker, required: true },
-    type: { type: String, enum: ['stock', 'bond', 'futures'], required: false },
-    sellDate: { type: Date, required: false },
-    sellPricePerSingle: { type: Number, required: false },
-    sellPriceSum: { type: Number, required: false },
-    profite: { type: Number, required: false },
-});
-
-const dividend = new Schema({
-    stockTitle: { type: String, required: true },
-    reciveDate: { type: Date, required: true },
-    sumPriceBuyngStoсk: { type: Number, required: true },
-    payment: { type: Number, required: true },
+    sumBalance: { type: Number, required: true },
+    status: { type: String, enum: ['active', 'inactive'], required: true },
 });
 
 const user = new Schema({
@@ -47,17 +20,15 @@ const user = new Schema({
         required: true,
     },
     avatar: { type: String, required: false },
-    brokerCounts: { type: [broker], required: false },
-    separatelyStoсks: {
-        type: [stock],
-        required: false,
-    },
-    activeStoсks: {
-        type: [stock],
+    brokerAccounts: { type: [broker], required: false },
+    stoсks: {
+        type: [Schema.ObjectId],
+        ref: 'Stock',
         required: false,
     },
     relatedPayments: {
-        type: [dividend],
+        type: [Schema.ObjectId],
+        ref: 'Dividend',
         required: false,
     },
 });

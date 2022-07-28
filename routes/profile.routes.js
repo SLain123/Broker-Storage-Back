@@ -7,10 +7,12 @@ const auth = require('../middleware/auth.middleware');
 // /api/profile
 router.get('/', auth, async (req, res) => {
     try {
-        const user = await User.findOne({ _id: req.user.userId })
+        const user = await User.findById(req.user.userId)
             .populate('defaultCurrency')
-            .populate({ path: 'brokerCounts', populate: { path: 'currency' } });
-
+            .populate({
+                path: 'brokerAccounts',
+                populate: { path: 'currency' },
+            });
         if (!user) {
             return res.status(400).json({
                 errors: [
@@ -21,14 +23,14 @@ router.get('/', auth, async (req, res) => {
             });
         }
 
-        const { nickName, avatar, defaultCurrency, brokerCounts } = user;
-      
+        const { nickName, avatar, defaultCurrency, brokerAccounts } = user;
+
         return res.json({
             message: 'User found',
             nickName,
             avatar,
             defaultCurrency,
-            brokerCounts,
+            brokerAccounts,
         });
     } catch (e) {
         res.status(500).json({ message: 'Something was wrong...' });
@@ -43,7 +45,6 @@ router.post(
     async (req, res) => {
         try {
             const errors = validationResult(req);
-
             if (!errors.isEmpty()) {
                 return res.status(400).json({
                     errors: errors.array(),
@@ -52,11 +53,10 @@ router.post(
             }
 
             const { nickName } = req.body;
-            const resultUser = await User.findOneAndUpdate(
-                { _id: req.user.userId },
-                { nickName },
-            );
 
+            const resultUser = await User.findByIdAndUpdate(req.user.userId, {
+                nickName,
+            });
             if (!resultUser) {
                 return res.status(400).json({
                     errors: [
@@ -82,7 +82,6 @@ router.post(
     async (req, res) => {
         try {
             const errors = validationResult(req);
-
             if (!errors.isEmpty()) {
                 return res.status(400).json({
                     errors: errors.array(),
@@ -91,11 +90,10 @@ router.post(
             }
 
             const { avatar } = req.body;
-            const result = await User.findOneAndUpdate(
-                { _id: req.user.userId },
-                { avatar },
-            );
 
+            const result = await User.findByIdAndUpdate(req.user.userId, {
+                avatar,
+            });
             if (!result) {
                 return res.status(400).json({
                     errors: [

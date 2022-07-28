@@ -33,9 +33,11 @@ app.use(
     }),
 );
 app.use(formData.parse());
+
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/profile', require('./routes/profile.routes'));
 app.use('/api/currency', require('./routes/currency.routes'));
+app.use('/api/broker', require('./routes/broker.routes'));
 
 async function start() {
     try {

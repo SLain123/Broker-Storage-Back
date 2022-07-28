@@ -66,9 +66,8 @@ router.post(
                 avatar: null,
                 role: 'user',
                 defaultCurrency,
-                brokerCounts: [],
-                separatelyStoсks: [],
-                activeStoсks: [],
+                brokerAccounts: [],
+                stoсks: [],
                 relatedPayments: [],
             });
             await user.save();
@@ -90,7 +89,6 @@ router.post(
     async (req, res) => {
         try {
             const errors = validationResult(req);
-
             if (!errors.isEmpty()) {
                 return res.status(400).json({
                     errors: errors.array(),
@@ -101,7 +99,6 @@ router.post(
             const { email, password } = req.body;
 
             const user = await User.findOne({ email });
-
             if (!user) {
                 return res.status(400).json({
                     errors: [
@@ -115,7 +112,6 @@ router.post(
             }
 
             const isMatch = await bcrypt.compare(password, user.password);
-
             if (!isMatch) {
                 return res.status(400).json({
                     errors: [
