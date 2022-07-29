@@ -4,15 +4,8 @@ const { check, validationResult } = require('express-validator');
 const router = Router();
 const auth = require('../middleware/auth.middleware');
 const mongoose = require('mongoose');
-
-const return400 = (res, msg) =>
-    res.status(400).json({
-        errors: [
-            {
-                msg,
-            },
-        ],
-    });
+const return400 = require('../utils/return400');
+const returnValidationResult = require('../utils/returnValidationResult');
 
 // /api/broker
 router.get('/', auth, async (req, res) => {
@@ -47,10 +40,7 @@ router.post(
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    errors: errors.array(),
-                    message: 'Data uncorrect!',
-                });
+                return returnValidationResult(res, errors);
             }
 
             const { title, currency, cash = 0 } = req.body;
@@ -91,10 +81,7 @@ router.post(
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    errors: errors.array(),
-                    message: 'Data uncorrect!',
-                });
+                return returnValidationResult(res, errors);
             }
 
             // check on valid broker id and user;

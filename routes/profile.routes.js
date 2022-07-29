@@ -3,6 +3,8 @@ const User = require('../models/User');
 const { check, validationResult } = require('express-validator');
 const router = Router();
 const auth = require('../middleware/auth.middleware');
+const return400 = require('../utils/return400');
+const returnValidationResult = require('../utils/returnValidationResult');
 
 // /api/profile
 router.get('/', auth, async (req, res) => {
@@ -14,13 +16,7 @@ router.get('/', auth, async (req, res) => {
                 populate: { path: 'currency' },
             });
         if (!result) {
-            return res.status(400).json({
-                errors: [
-                    {
-                        msg: 'User not found',
-                    },
-                ],
-            });
+            return return400(res, 'User not found');
         }
 
         const { nickName, avatar, defaultCurrency, brokerAccounts } = result;
@@ -46,10 +42,7 @@ router.post(
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    errors: errors.array(),
-                    message: 'Data uncorrect!',
-                });
+                return returnValidationResult(res, errors);
             }
 
             const { nickName } = req.body;
@@ -58,13 +51,7 @@ router.post(
                 nickName,
             });
             if (!result) {
-                return res.status(400).json({
-                    errors: [
-                        {
-                            msg: 'User not found',
-                        },
-                    ],
-                });
+                return return400(res, 'User not found');
             }
 
             return res.json({ message: 'User data has been changed' });
@@ -83,10 +70,7 @@ router.post(
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    errors: errors.array(),
-                    message: 'Data uncorrect!',
-                });
+                return returnValidationResult(res, errors);
             }
 
             const { avatar } = req.body;
@@ -95,13 +79,7 @@ router.post(
                 avatar,
             });
             if (!result) {
-                return res.status(400).json({
-                    errors: [
-                        {
-                            msg: 'User not found',
-                        },
-                    ],
-                });
+                return return400(res, 'User not found');
             }
 
             return res.json({ message: 'User data has been changed' });

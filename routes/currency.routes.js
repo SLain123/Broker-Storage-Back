@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const Currency = require('../models/Currency');
 const router = Router();
+const return400 = require('../utils/return400');
 
 // /api/tools/currency
 router.get('/', async (_req, res) => {
@@ -8,13 +9,7 @@ router.get('/', async (_req, res) => {
         const currencies = await Currency.find();
 
         if (!currencies.length) {
-            return res.status(400).json({
-                errors: [
-                    {
-                        msg: 'No currency exists',
-                    },
-                ],
-            });
+            return return400(res, 'No currency exists');
         }
 
         res.json({ message: 'Success!', currencies });

@@ -5,6 +5,8 @@ const { check, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const router = Router();
 const auth = require('../middleware/auth.middleware');
+const return400 = require('../utils/return400');
+const returnValidationResult = require('../utils/returnValidationResult');
 
 // /api/auth/register
 router.post(
@@ -21,25 +23,14 @@ router.post(
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    errors: errors.array(),
-                    message: 'Data uncorrect!',
-                });
+                return returnValidationResult(res, errors);
             }
 
             const { email, password, nickName, defaultCurrency } = req.body;
 
             const candidateByMail = await User.findOne({ email });
             if (candidateByMail) {
-                return res.status(400).json({
-                    errors: [
-                        {
-                            msg: 'User email already exists!',
-                            value: email,
-                            param: 'email',
-                        },
-                    ],
-                });
+                return return400(res, 'User email already exists!');
             }
 
             if (
@@ -47,15 +38,7 @@ router.post(
                 !defaultCurrency.title ||
                 !defaultCurrency.ticker
             ) {
-                return res.status(400).json({
-                    errors: [
-                        {
-                            msg: 'Currency have wrong format',
-                            value: defaultCurrency,
-                            param: 'defaultCurrency',
-                        },
-                    ],
-                });
+                return return400(res, 'Currency have wrong format');
             }
 
             const hashedPassword = await bcrypt.hash(password, 11);
@@ -90,45 +73,26 @@ router.post(
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    errors: errors.array(),
-                    message: 'Data uncorrect!',
-                });
+                return returnValidationResult(res, errors);
             }
 
             const { email, password } = req.body;
 
             const user = await User.findOne({ email });
             if (!user) {
-                return res.status(400).json({
-                    errors: [
-                        {
-                            msg: "User doesn't exist!",
-                            value: email,
-                            param: 'email',
-                        },
-                    ],
-                });
+                return return400(res, "User doesn't exist!");
             }
 
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
-                return res.status(400).json({
-                    errors: [
-                        {
-                            msg: 'Password incorrect!',
-                            value: email,
-                            param: 'email',
-                        },
-                    ],
-                });
+                return return400(res, 'Password incorrect!');
             }
 
             const token = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_SECRET,
                 {
-                    expiresIn: '1d',
+                    expiresIn: '10d',
                 },
             );
 
