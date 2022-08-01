@@ -1,4 +1,23 @@
-const { Schema, model } = require('mongoose');
+import { Document, Schema, model } from 'mongoose';
+import { broker, IBroker } from './User';
+import { ICurrency } from './Currency';
+
+export interface IStock extends Document {
+    buyDate: Date;
+    title: string;
+    count: number;
+    pricePerSingle: number;
+    priceSumWithFee: number;
+    pricePerSingleWithFee: number;
+    fee: number;
+    currency: ICurrency;
+    broker: IBroker;
+    type: 'stock' | 'bond' | 'futures';
+    sellDate?: Date;
+    sellPricePerSingle?: number;
+    sellPriceSum?: number;
+    profite?: number;
+}
 
 const stock = new Schema({
     buyDate: { type: Date, required: true },
@@ -9,7 +28,7 @@ const stock = new Schema({
     pricePerSingleWithFee: { type: Number, required: true },
     fee: { type: Number, required: true },
     currency: {
-        type: Schema.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'Currency',
         required: true,
     },
@@ -21,4 +40,4 @@ const stock = new Schema({
     profite: { type: Number, required: false },
 });
 
-module.exports = model('Stock', stock);
+export const Stock = model<IStock>('Stock', stock);

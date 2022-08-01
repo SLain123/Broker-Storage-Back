@@ -1,13 +1,14 @@
-const { Router } = require('express');
-const User = require('../models/User');
-const { check, validationResult } = require('express-validator');
+import { Router } from 'express';
+import { User } from '../models/User';
+import { check, validationResult } from 'express-validator';
+import { checkAuth } from '../middleware/auth.middleware';
+import { return400 } from '../utils/return400';
+import { returnValidationResult } from '../utils/returnValidationResult';
+
 const router = Router();
-const auth = require('../middleware/auth.middleware');
-const return400 = require('../utils/return400');
-const returnValidationResult = require('../utils/returnValidationResult');
 
 // /api/profile
-router.get('/', auth, async (req, res) => {
+router.get('/', checkAuth, async (req, res) => {
     try {
         const result = await User.findById(req.user.userId)
             .populate('defaultCurrency')
@@ -37,7 +38,7 @@ router.get('/', auth, async (req, res) => {
 router.post(
     '/',
     [check('nickName', 'User nick name is missing').notEmpty()],
-    auth,
+    checkAuth,
     async (req, res) => {
         try {
             const errors = validationResult(req);
@@ -65,7 +66,7 @@ router.post(
 router.post(
     '/avatar',
     [check('avatar', 'Avatar must be base64 format').notEmpty()],
-    auth,
+    checkAuth,
     async (req, res) => {
         try {
             const errors = validationResult(req);
@@ -89,4 +90,4 @@ router.post(
     },
 );
 
-module.exports = router;
+export = router;

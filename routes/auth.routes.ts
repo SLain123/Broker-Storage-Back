@@ -1,12 +1,13 @@
-const { Router } = require('express');
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
-const { check, validationResult } = require('express-validator');
-const jwt = require('jsonwebtoken');
+import { Router } from 'express';
+import { User } from '../models/User';
+import { hash, compare } from 'bcrypt';
+import { check, validationResult } from 'express-validator';
+import { sign } from 'jsonwebtoken';
+import { checkAuth } from '../middleware/auth.middleware';
+import { return400 } from '../utils/return400';
+import { returnValidationResult } from '../utils/returnValidationResult';
+
 const router = Router();
-const auth = require('../middleware/auth.middleware');
-const return400 = require('../utils/return400');
-const returnValidationResult = require('../utils/returnValidationResult');
 
 // /api/auth/register
 router.post(
@@ -41,7 +42,7 @@ router.post(
                 return return400(res, 'Currency have wrong format');
             }
 
-            const hashedPassword = await bcrypt.hash(password, 11);
+            const hashedPassword = await hash(password, 11);
             const user = new User({
                 email,
                 password: hashedPassword,
@@ -83,18 +84,14 @@ router.post(
                 return return400(res, "User doesn't exist!");
             }
 
-            const isMatch = await bcrypt.compare(password, user.password);
+            const isMatch = await compare(password, user?.password);
             if (!isMatch) {
                 return return400(res, 'Password incorrect!');
             }
 
-            const token = jwt.sign(
-                { userId: user.id },
-                process.env.JWT_SECRET,
-                {
-                    expiresIn: '10d',
-                },
-            );
+            const token = sign({ userId: user.id }, process.env.JWT_SECRET, {
+                expiresIn: '10d',
+            });
 
             res.json({
                 token,
@@ -108,7 +105,7 @@ router.post(
 );
 
 // /api/auth/check
-router.get('/check', auth, async (req, res) => {
+router.get('/check', checkAuth, async (req, res) => {
     try {
         if (req.user.userId) {
             return res.json({ message: 'Token correct', validate: true });
@@ -120,4 +117,4 @@ router.get('/check', auth, async (req, res) => {
     }
 });
 
-module.exports = router;
+export = router;

@@ -1,9 +1,10 @@
-const { Router } = require('express');
-const Currency = require('../models/Currency');
-const router = Router();
-const return400 = require('../utils/return400');
+import { Router } from 'express';
+import { return400 } from '../utils/return400';
+import { Currency } from '../models/Currency';
 
-// /api/tools/currency
+const router = Router();
+
+// /api/currency
 router.get('/', async (_req, res) => {
     try {
         const currencies = await Currency.find();
@@ -18,4 +19,4 @@ router.get('/', async (_req, res) => {
     }
 });
 
-module.exports = router;
+export = router;

@@ -1,14 +1,15 @@
-const { Router } = require('express');
-const User = require('../models/User');
-const { check, validationResult } = require('express-validator');
+import * as mongoose from 'mongoose';
+import { Router } from 'express';
+import { User } from '../models/User';
+import { check, validationResult } from 'express-validator';
+import { checkAuth } from '../middleware/auth.middleware';
+import { return400 } from '../utils/return400';
+import { returnValidationResult } from '../utils/returnValidationResult';
+
 const router = Router();
-const auth = require('../middleware/auth.middleware');
-const mongoose = require('mongoose');
-const return400 = require('../utils/return400');
-const returnValidationResult = require('../utils/returnValidationResult');
 
 // /api/broker
-router.get('/', auth, async (req, res) => {
+router.get('/', checkAuth, async (req, res) => {
     try {
         const result = await User.findById(req.user.userId).populate({
             path: 'brokerAccounts',
@@ -28,14 +29,14 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// /api/broker/add
+// /api/broker
 router.post(
-    '/add',
+    '/',
     [
         check('title', 'Title of broker is missing').notEmpty(),
         check('currency', 'Currency was not recived').notEmpty(),
     ],
-    auth,
+    checkAuth,
     async (req, res) => {
         try {
             const errors = validationResult(req);
@@ -76,7 +77,7 @@ router.post(
 router.post(
     '/remove',
     [check('_id', 'ID was not recived').notEmpty()],
-    auth,
+    checkAuth,
     async (req, res) => {
         try {
             const errors = validationResult(req);
@@ -115,4 +116,4 @@ router.post(
     },
 );
 
-module.exports = router;
+export = router;

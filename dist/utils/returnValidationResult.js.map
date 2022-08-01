@@ -1,0 +1,1 @@
+{"version":3,"file":"returnValidationResult.js","sourceRoot":"","sources":["../../utils/returnValidationResult.ts"],"names":[],"mappings":";;;AAAa,QAAA,sBAAsB,GAAG,CAAC,GAAG,EAAE,GAAG,EAAE,EAAE,CAC/C,GAAG,CAAC,MAAM,CAAC,GAAG,CAAC,CAAC,IAAI,CAAC;IACjB,MAAM,EAAE,GAAG,CAAC,KAAK,EAAE;IACnB,OAAO,EAAE,iBAAiB;CAC7B,CAAC,CAAC"}
