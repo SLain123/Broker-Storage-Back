@@ -88,7 +88,7 @@ router.post(
             const { _id } = req.body;
             // check on valid broker id and user;
             if (_id.length !== 24 && _id.length !== 12) {
-                return return400(res, 'Broker accound not found');
+                return return400(res, 'Broker account not found');
             }
             let isExistedBroker = false;
             const recivedId = new mongoose.mongo.ObjectId(_id);
@@ -102,7 +102,7 @@ router.post(
                 }
             });
             if (!isExistedBroker) {
-                return return400(res, 'Broker accound not found');
+                return return400(res, 'Broker account not found');
             }
 
             await User.findByIdAndUpdate(req.user.userId, {
@@ -132,7 +132,10 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { _id, cash } = req.body;
+            const { _id, cash, status = 'active' } = req.body;
+            if (status !== 'active' && status !== 'unactive') {
+                return return400(res, 'Transferred status does not exist');
+            }
             // check on valid broker id and user;
             if (_id.length !== 24 && _id.length !== 12) {
                 return return400(res, 'Broker accound not found');
@@ -147,7 +150,7 @@ router.post(
             }
             const { brokerAccounts } = userData;
             brokerAccounts.forEach((broker: IBroker, index) => {
-                const { _id, title, currency, sumStokes, status } = broker;
+                const { _id, title, currency, sumStokes } = broker;
                 if (String(_id) === String(recivedId)) {
                     isExistedBroker = true;
                     currentBroker = {
@@ -163,7 +166,7 @@ router.post(
                 }
             });
             if (!isExistedBroker) {
-                return return400(res, 'Broker accound not found');
+                return return400(res, 'Broker account not found');
             }
             const updateBrokerList = [
                 ...brokerAccounts.slice(0, findIndex),
@@ -174,7 +177,9 @@ router.post(
             await User.findByIdAndUpdate(req.user.userId, {
                 brokerAccounts: updateBrokerList,
             });
-            return res.json({ message: 'A broker account cash was corrected' });
+            return res.json({
+                message: 'A broker account cash or/and status was corrected',
+            });
         } catch (e) {
             res.status(500).json({ message: 'Something was wrong...' });
         }
