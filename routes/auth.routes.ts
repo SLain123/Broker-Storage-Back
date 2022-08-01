@@ -17,7 +17,7 @@ router.post(
         check('password', 'Uncorrect password, minimum 6 symbols').isLength({
             min: 6,
         }),
-        check('nickName', 'User nick name is missing').notEmpty(),
+        check('nickName', 'User nick name is missing').isString().notEmpty(),
         check('defaultCurrency', 'Default currency was not recived').notEmpty(),
     ],
     async (req, res) => {

@@ -37,7 +37,7 @@ router.get('/', checkAuth, async (req, res) => {
 // /api/profile
 router.post(
     '/',
-    [check('nickName', 'User nick name is missing').notEmpty()],
+    [check('nickName', 'User nick name is missing').isString().notEmpty()],
     checkAuth,
     async (req, res) => {
         try {
@@ -65,7 +65,7 @@ router.post(
 // /api/profile/avatar
 router.post(
     '/avatar',
-    [check('avatar', 'Avatar must be base64 format').notEmpty()],
+    [check('avatar', 'Avatar must be base64 format').isBase64()],
     checkAuth,
     async (req, res) => {
         try {
