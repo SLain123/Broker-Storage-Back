@@ -2,13 +2,39 @@ import { Router } from 'express';
 import { check, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 
-import { User, IBroker } from '../models/User';
+import { User } from '../models/User';
+import { IBroker, Broker } from '../models/Broker';
 import { Stock } from '../models/Stock';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
 
 const router = Router();
+
+// /api/stock/all
+router.get('/all', checkAuth, async (req, res) => {
+    try {
+        const result = await User.findById(req.user.userId).populate([
+            {
+                path: 'stoсks',
+                populate: { path: 'broker', populate: { path: 'currency' } },
+            },
+            { path: 'stoсks', populate: 'currency' },
+        ]);
+
+        if (!result) {
+            return return400(res, 'User not found');
+        }
+        const { stoсks } = result;
+
+        return res.json({
+            message: 'Stoсks were found',
+            stoсks,
+        });
+    } catch (e) {
+        res.status(500).json({ message: 'Something was wrong...' });
+    }
+});
 
 // /api/stock/buy
 router.post(
@@ -64,9 +90,12 @@ router.post(
                 return return400(res, 'User not found');
             }
 
-            let currentBroker;
+            let currentBroker = null;
+            let isEnoghCash = true;
+            const allCost = pricePerSingle * count + fee;
             const brokerObjectId = new Types.ObjectId(brokerId);
-            userData.brokerAccounts.forEach((brokerItem: IBroker) => {
+            const { brokerAccounts } = userData;
+            brokerAccounts.forEach((brokerItem: IBroker) => {
                 const {
                     _id,
                     title,
@@ -77,6 +106,10 @@ router.post(
                     status,
                 } = brokerItem;
                 if (String(_id) === String(brokerObjectId)) {
+                    if (allCost > cash) {
+                        isEnoghCash = false;
+                    }
+
                     currentBroker = {
                         _id,
                         title,
@@ -88,10 +121,13 @@ router.post(
                     };
                 }
             });
+            if (!isEnoghCash) {
+                return return400(res, 'Not enough cash for purchase');
+            }
             if (!currentBroker) {
                 return return400(res, 'Broker account was not found');
             }
-
+            
             const stockData = {
                 buyDate: new Date(buyDate),
                 title,
@@ -107,6 +143,11 @@ router.post(
 
             const stock = new Stock(stockData);
             stock.save().then(async ({ _id }) => {
+                await Broker.findByIdAndUpdate(currentBroker._id, {
+                    cash: currentBroker.cash - allCost,
+                    sumStokes: currentBroker.sumStokes + allCost,
+                })
+
                 await User.findByIdAndUpdate(req.user.userId, {
                     $push: {
                         stoсks: {

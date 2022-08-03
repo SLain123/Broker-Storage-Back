@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { check, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 
-import { User, IBroker } from '../models/User';
+import { User } from '../models/User';
+import { IBroker, Broker } from '../models/Broker';
 import { Currency } from '../models/Currency';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
@@ -48,11 +49,19 @@ router.post(
 
             const { title, currencyId, cash = 0 } = req.body;
 
+            const userData = await User.findById(req.user.userId);
+            if (!userData) {
+                return return400(res, 'User not found');
+            }
+
             if (!Types.ObjectId.isValid(currencyId)) {
                 return return400(res, 'Currency id have wrong format');
             }
-
             const currency = await Currency.findById(currencyId);
+            if (!currency) {
+                return return400(res, 'Currency was not found');
+            }
+
             const brokerData = {
                 title,
                 currency,
@@ -61,14 +70,18 @@ router.post(
                 sumBalance: cash,
                 status: 'active',
             };
-            const result = await User.findByIdAndUpdate(req.user.userId, {
-                $push: {
-                    brokerAccounts: brokerData,
-                },
+
+            const broker = new Broker(brokerData);
+            broker.save().then(async ({ _id }) => {
+                await User.findByIdAndUpdate(req.user.userId, {
+                    $push: {
+                        brokerAccounts: {
+                            _id,
+                            ...brokerData,
+                        },
+                    },
+                });
             });
-            if (!result) {
-                return return400(res, 'User not found');
-            }
 
             return res.json({
                 message: 'A broker account has been created',
@@ -98,27 +111,37 @@ router.post(
                 return return400(res, 'Broker id have wrong format');
             }
 
-            let isExistedBroker = false;
-            const recivedId = new Types.ObjectId(id);
             const userData = await User.findById(req.user.userId);
             if (!userData) {
                 return return400(res, 'User not found');
             }
-            userData.brokerAccounts.forEach(({ _id }) => {
-                if (String(_id) === String(recivedId)) {
-                    isExistedBroker = true;
-                }
-            });
-            if (!isExistedBroker) {
+
+            const recivedId = new Types.ObjectId(id);
+            const removingResult = await Broker.findByIdAndDelete(recivedId);
+            if (!removingResult) {
                 return return400(res, 'Broker account not found');
             }
 
-            await User.findByIdAndUpdate(req.user.userId, {
-                $pull: {
-                    brokerAccounts: { _id: id },
-                },
+            let findIndex = -1;
+            const { brokerAccounts } = userData;
+            brokerAccounts.forEach(({ _id }, index) => {
+                if (String(_id) === String(recivedId)) {
+                    findIndex = index;
+                }
             });
-            return res.json({ message: 'A broker account has been removed' });
+            if (findIndex !== -1) {
+                const updateBrokerList = [
+                    ...brokerAccounts.slice(0, findIndex),
+                    ...brokerAccounts.slice(findIndex + 1),
+                ];
+                await User.findByIdAndUpdate(req.user.userId, {
+                    brokerAccounts: updateBrokerList,
+                });
+            }
+
+            return res.json({
+                message: 'A broker account has been removed',
+            });
         } catch (e) {
             res.status(500).json({ message: 'Something was wrong...' });
         }
@@ -150,45 +173,34 @@ router.post(
                 return return400(res, 'Broker id have wrong format');
             }
 
-            let isExistedBroker = false;
-            let currentBroker = null;
-            let findIndex = 0;
-            const recivedId = new Types.ObjectId(id);
-
-            const userData = await User.findById(req.user.userId);
+            const userData = await User.findById(req.user.userId).populate(
+                'brokerAccounts',
+            );
             if (!userData) {
                 return return400(res, 'User not found');
             }
 
+            let currentSumStokes = 0;
+            let findIndex = -1;
+            const recivedId = new Types.ObjectId(id);
             const { brokerAccounts } = userData;
             brokerAccounts.forEach((broker: IBroker, index) => {
-                const { _id, title, currency, sumStokes } = broker;
+                const { _id, sumStokes } = broker;
                 if (String(_id) === String(recivedId)) {
-                    isExistedBroker = true;
-                    currentBroker = {
-                        _id,
-                        title,
-                        currency,
-                        cash,
-                        sumStokes,
-                        sumBalance: sumStokes + cash,
-                        status,
-                    };
+                    currentSumStokes = sumStokes;
                     findIndex = index;
                 }
             });
-            if (!isExistedBroker) {
+            if (findIndex === -1) {
                 return return400(res, 'Broker account not found');
             }
-            const updateBrokerList = [
-                ...brokerAccounts.slice(0, findIndex),
-                currentBroker,
-                ...brokerAccounts.slice(findIndex + 1),
-            ];
 
-            await User.findByIdAndUpdate(req.user.userId, {
-                brokerAccounts: updateBrokerList,
+            await Broker.findByIdAndUpdate(id, {
+                cash,
+                status,
+                sumBalance: cash + currentSumStokes,
             });
+            
             return res.json({
                 message: 'A broker account cash or/and status was corrected',
             });

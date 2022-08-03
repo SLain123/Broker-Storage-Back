@@ -1,5 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
-import { IBroker } from './User';
+import { IBroker } from './Broker';
 import { ICurrency } from './Currency';
 
 export interface IStock extends Document {
