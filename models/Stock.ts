@@ -1,5 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
-import { broker, IBroker } from './User';
+import { IBroker } from './User';
 import { ICurrency } from './Currency';
 
 export interface IStock extends Document {
@@ -32,8 +32,8 @@ const stock = new Schema({
         ref: 'Currency',
         required: true,
     },
-    broker: { type: broker, required: true },
-    type: { type: String, enum: ['stock', 'bond', 'futures'], required: false },
+    broker: { type: Schema.Types.ObjectId, ref: 'Broker', required: true },
+    type: { type: String, enum: ['stock', 'bond', 'futures'], required: true },
     sellDate: { type: Date, required: false },
     sellPricePerSingle: { type: Number, required: false },
     sellPriceSum: { type: Number, required: false },

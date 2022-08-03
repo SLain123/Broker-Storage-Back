@@ -34,7 +34,7 @@ router.post(
     '/',
     [
         check('title', 'Title of broker is missing').isString().notEmpty(),
-        check('currency', 'Currency was not recived').isString().notEmpty(),
+        check('currency', 'Currency was not recived').notEmpty(),
     ],
     checkAuth,
     async (req, res) => {

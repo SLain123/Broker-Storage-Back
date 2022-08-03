@@ -7,6 +7,7 @@ import * as authRoutes from './routes/auth.routes';
 import * as profileRoutes from './routes/profile.routes';
 import * as currencyRoutes from './routes/currency.routes';
 import * as brokerRoutes from './routes/broker.routes';
+import * as stockRoutes from './routes/stock.routes';
 
 const app = express();
 dotenv.config();
@@ -51,6 +52,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/currency', currencyRoutes);
 app.use('/api/broker', brokerRoutes);
+app.use('/api/stock', stockRoutes);
 
 async function start() {
     try {
