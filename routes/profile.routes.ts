@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { User } from '../models/User';
 import { check, validationResult } from 'express-validator';
+
+import { User } from '../models/User';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';

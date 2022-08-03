@@ -1,7 +1,9 @@
-import * as mongoose from 'mongoose';
 import { Router } from 'express';
-import { User, IBroker } from '../models/User';
 import { check, validationResult } from 'express-validator';
+import { Types } from 'mongoose';
+
+import { User, IBroker } from '../models/User';
+import { Currency } from '../models/Currency';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
@@ -34,7 +36,7 @@ router.post(
     '/',
     [
         check('title', 'Title of broker is missing').isString().notEmpty(),
-        check('currency', 'Currency was not recived').notEmpty(),
+        check('currencyId', 'Currency id was not recived').notEmpty(),
     ],
     checkAuth,
     async (req, res) => {
@@ -44,29 +46,34 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { title, currency, cash = 0 } = req.body;
+            const { title, currencyId, cash = 0 } = req.body;
 
-            if (!currency._id || !currency.title || !currency.ticker) {
-                return return400(res, 'Currency have wrong format');
+            if (!Types.ObjectId.isValid(currencyId)) {
+                return return400(res, 'Currency id have wrong format');
             }
 
+            const currency = await Currency.findById(currencyId);
+            const brokerData = {
+                title,
+                currency,
+                cash,
+                sumStokes: 0,
+                sumBalance: cash,
+                status: 'active',
+            };
             const result = await User.findByIdAndUpdate(req.user.userId, {
                 $push: {
-                    brokerAccounts: {
-                        title,
-                        currency,
-                        cash,
-                        sumStokes: 0,
-                        sumBalance: cash,
-                        status: 'active',
-                    },
+                    brokerAccounts: brokerData,
                 },
             });
             if (!result) {
                 return return400(res, 'User not found');
             }
 
-            return res.json({ message: 'A broker account has been created' });
+            return res.json({
+                message: 'A broker account has been created',
+                brokerData,
+            });
         } catch (e) {
             res.status(500).json({ message: 'Something was wrong...' });
         }
@@ -76,7 +83,7 @@ router.post(
 // /api/broker/remove
 router.post(
     '/remove',
-    [check('_id', 'ID was not recived').isString().notEmpty()],
+    [check('id', 'ID was not recived').notEmpty()],
     checkAuth,
     async (req, res) => {
         try {
@@ -85,13 +92,14 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { _id } = req.body;
-            // check on valid broker id and user;
-            if (_id.length !== 24 && _id.length !== 12) {
-                return return400(res, 'Broker account not found');
+            const { id } = req.body;
+
+            if (!Types.ObjectId.isValid(id)) {
+                return return400(res, 'Broker id have wrong format');
             }
+
             let isExistedBroker = false;
-            const recivedId = new mongoose.mongo.ObjectId(_id);
+            const recivedId = new Types.ObjectId(id);
             const userData = await User.findById(req.user.userId);
             if (!userData) {
                 return return400(res, 'User not found');
@@ -107,7 +115,7 @@ router.post(
 
             await User.findByIdAndUpdate(req.user.userId, {
                 $pull: {
-                    brokerAccounts: { _id },
+                    brokerAccounts: { _id: id },
                 },
             });
             return res.json({ message: 'A broker account has been removed' });
@@ -121,7 +129,7 @@ router.post(
 router.post(
     '/correct',
     [
-        check('_id', 'ID was not recived').isString().notEmpty(),
+        check('id', 'ID was not recived').notEmpty(),
         check('cash', 'cash sum was not recived').isFloat({ min: 0 }),
     ],
     checkAuth,
@@ -132,22 +140,26 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { _id, cash, status = 'active' } = req.body;
+            const { id, cash, status = 'active' } = req.body;
+
             if (status !== 'active' && status !== 'unactive') {
                 return return400(res, 'Transferred status does not exist');
             }
-            // check on valid broker id and user;
-            if (_id.length !== 24 && _id.length !== 12) {
-                return return400(res, 'Broker accound not found');
+
+            if (!Types.ObjectId.isValid(id)) {
+                return return400(res, 'Broker id have wrong format');
             }
+
             let isExistedBroker = false;
             let currentBroker = null;
             let findIndex = 0;
-            const recivedId = new mongoose.mongo.ObjectId(_id);
+            const recivedId = new Types.ObjectId(id);
+
             const userData = await User.findById(req.user.userId);
             if (!userData) {
                 return return400(res, 'User not found');
             }
+
             const { brokerAccounts } = userData;
             brokerAccounts.forEach((broker: IBroker, index) => {
                 const { _id, title, currency, sumStokes } = broker;

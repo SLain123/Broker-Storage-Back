@@ -1,8 +1,11 @@
 import { Router } from 'express';
-import { User } from '../models/User';
-import { hash, compare } from 'bcrypt';
 import { check, validationResult } from 'express-validator';
+import { Types } from 'mongoose';
+import { hash, compare } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
+
+import { User } from '../models/User';
+import { Currency } from '../models/Currency';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
@@ -18,7 +21,10 @@ router.post(
             min: 6,
         }),
         check('nickName', 'User nick name is missing').isString().notEmpty(),
-        check('defaultCurrency', 'Default currency was not recived').notEmpty(),
+        check(
+            'defaultCurrencyId',
+            'Default currency id was not recived',
+        ).notEmpty(),
     ],
     async (req, res) => {
         try {
@@ -27,21 +33,18 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { email, password, nickName, defaultCurrency } = req.body;
+            const { email, password, nickName, defaultCurrencyId } = req.body;
 
             const candidateByMail = await User.findOne({ email });
             if (candidateByMail) {
                 return return400(res, 'User email already exists!');
             }
 
-            if (
-                !defaultCurrency._id ||
-                !defaultCurrency.title ||
-                !defaultCurrency.ticker
-            ) {
-                return return400(res, 'Currency have wrong format');
+            if (!Types.ObjectId.isValid(defaultCurrencyId)) {
+                return return400(res, 'Default currency id have wrong format');
             }
 
+            const currency = await Currency.findById(defaultCurrencyId);
             const hashedPassword = await hash(password, 11);
             const user = new User({
                 email,
@@ -49,7 +52,7 @@ router.post(
                 nickName,
                 avatar: null,
                 role: 'user',
-                defaultCurrency,
+                defaultCurrency: currency,
                 brokerAccounts: [],
                 stoсks: [],
                 relatedPayments: [],

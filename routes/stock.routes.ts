@@ -1,11 +1,12 @@
 import { Router } from 'express';
+import { check, validationResult } from 'express-validator';
+import { Types } from 'mongoose';
+
 import { User, IBroker } from '../models/User';
 import { Stock } from '../models/Stock';
-import { check, validationResult } from 'express-validator';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
-import { Types } from 'mongoose';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.post(
     '/buy',
     [
         check('buyDate', 'Date of buying was missing').isDate(),
-        check('title', 'Title of the stock was not received').notEmpty(),
+        check('title', 'Title of the stock was not received').isString(),
         check('count', 'Count of the stock was not specified').isFloat({
             min: 0,
         }),
