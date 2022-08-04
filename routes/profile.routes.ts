@@ -38,7 +38,7 @@ router.get('/', checkAuth, async (req: Request, res: Response) => {
 // /api/profile
 router.post(
     '/',
-    [check('nickName', 'User nick name is missing').isString().notEmpty()],
+    [check('nickName', 'User nick name is missing').isString()],
     checkAuth,
     async (req: Request, res: Response) => {
         try {

@@ -36,8 +36,10 @@ router.get('/', checkAuth, async (req: Request, res: Response) => {
 router.post(
     '/',
     [
-        check('title', 'Title of broker is missing').isString().notEmpty(),
-        check('currencyId', 'Currency id was not recived').notEmpty(),
+        check('title', 'Title of broker is missing').isString(),
+        check('currencyId', 'Currency ID was not recived or incorrect').custom(
+            (id) => Types.ObjectId.isValid(id),
+        ),
     ],
     checkAuth,
     async (req: Request, res: Response) => {
@@ -54,9 +56,6 @@ router.post(
                 return return400(res, 'User not found');
             }
 
-            if (!Types.ObjectId.isValid(currencyId)) {
-                return return400(res, 'Currency id have wrong format');
-            }
             const currency = await Currency.findById(currencyId);
             if (!currency) {
                 return return400(res, 'Currency was not found');
@@ -96,7 +95,11 @@ router.post(
 // /api/broker/remove
 router.post(
     '/remove',
-    [check('id', 'ID was not recived').notEmpty()],
+    [
+        check('id', 'ID was not recived or incorrect').custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
+    ],
     checkAuth,
     async (req: Request, res: Response) => {
         try {
@@ -105,18 +108,12 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { id } = req.body;
-
-            if (!Types.ObjectId.isValid(id)) {
-                return return400(res, 'Broker id have wrong format');
-            }
-
             const userData = await User.findById(req.user.userId);
             if (!userData) {
                 return return400(res, 'User not found');
             }
 
-            const recivedId = new Types.ObjectId(id);
+            const recivedId = new Types.ObjectId(req.body.id);
             const removingResult = await Broker.findByIdAndDelete(recivedId);
             if (!removingResult) {
                 return return400(res, 'Broker account not found');
@@ -152,7 +149,10 @@ router.post(
 router.post(
     '/correct',
     [
-        check('id', 'ID was not recived').notEmpty(),
+        check('id', 'ID was not recived or incorrect').custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
+        check('title', 'Incorrect title').optional().isString().notEmpty(),
         check('cash', 'Cash sum was not recived').isFloat({ min: 0 }),
         check('status', 'Incorrect status')
             .optional()
@@ -166,11 +166,7 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { id, cash, status = 'active' } = req.body;
-
-            if (!Types.ObjectId.isValid(id)) {
-                return return400(res, 'Broker id have wrong format');
-            }
+            const { id, title, cash, status = 'active' } = req.body;
 
             const userData = await User.findById(req.user.userId).populate(
                 'brokerAccounts',
@@ -180,14 +176,16 @@ router.post(
             }
 
             let currentSumStokes = 0;
+            let oldTitle = '';
             let findIndex = -1;
             const recivedId = new Types.ObjectId(id);
             const { brokerAccounts } = userData;
             brokerAccounts.forEach((broker: IBroker, index) => {
-                const { _id, sumStokes } = broker;
+                const { _id, title, sumStokes } = broker;
                 if (String(_id) === String(recivedId)) {
                     currentSumStokes = sumStokes;
                     findIndex = index;
+                    oldTitle = title;
                 }
             });
             if (findIndex === -1) {
@@ -195,9 +193,10 @@ router.post(
             }
 
             await Broker.findByIdAndUpdate(id, {
+                title: title ? title : oldTitle,
                 cash,
                 status,
-                sumBalance: cash + currentSumStokes,
+                sumBalance: Number(cash) + Number(currentSumStokes),
             });
 
             return res.json({

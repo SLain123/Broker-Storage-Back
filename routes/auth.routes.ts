@@ -20,11 +20,11 @@ router.post(
         check('password', 'Uncorrect password, minimum 6 symbols').isLength({
             min: 6,
         }),
-        check('nickName', 'User nick name is missing').isString().notEmpty(),
+        check('nickName', 'User nick name is missing').isString(),
         check(
             'defaultCurrencyId',
-            'Default currency id was not recived',
-        ).notEmpty(),
+            'Default currency ID was not recived or incorrect',
+        ).custom((id) => Types.ObjectId.isValid(id)),
     ],
     async (req: Request, res: Response) => {
         try {
@@ -38,10 +38,6 @@ router.post(
             const candidateByMail = await User.findOne({ email });
             if (candidateByMail) {
                 return return400(res, 'User email already exists!');
-            }
-
-            if (!Types.ObjectId.isValid(defaultCurrencyId)) {
-                return return400(res, 'Default currency id have wrong format');
             }
 
             const currency = await Currency.findById(defaultCurrencyId);
