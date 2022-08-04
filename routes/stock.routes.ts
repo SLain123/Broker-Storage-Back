@@ -19,12 +19,12 @@ router.post(
             .optional()
             .isObject()
             .custom(
-                (value: Object) =>
-                    value.hasOwnProperty('brokerId') ||
-                    value.hasOwnProperty('currencyId') ||
-                    value.hasOwnProperty('year') ||
-                    value.hasOwnProperty('isSold') ||
-                    value.hasOwnProperty('type'),
+                (obj: Object) =>
+                    obj.hasOwnProperty('brokerId') ||
+                    obj.hasOwnProperty('currencyId') ||
+                    obj.hasOwnProperty('year') ||
+                    obj.hasOwnProperty('isSold') ||
+                    obj.hasOwnProperty('type'),
             ),
     ],
     checkAuth,
@@ -143,10 +143,8 @@ router.post(
         check('type', 'Type of stock was not recived')
             .exists()
             .custom(
-                (value) =>
-                    value === 'stock' ||
-                    value === 'bond' ||
-                    value === 'futures',
+                (type) =>
+                    type === 'stock' || type === 'bond' || type === 'futures',
             ),
     ],
     checkAuth,

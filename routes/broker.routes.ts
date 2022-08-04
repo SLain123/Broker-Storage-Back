@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 
@@ -12,7 +12,7 @@ import { returnValidationResult } from '../utils/returnValidationResult';
 const router = Router();
 
 // /api/broker
-router.get('/', checkAuth, async (req, res) => {
+router.get('/', checkAuth, async (req: Request, res: Response) => {
     try {
         const result = await User.findById(req.user.userId).populate({
             path: 'brokerAccounts',
@@ -40,7 +40,7 @@ router.post(
         check('currencyId', 'Currency id was not recived').notEmpty(),
     ],
     checkAuth,
-    async (req, res) => {
+    async (req: Request, res: Response) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -98,7 +98,7 @@ router.post(
     '/remove',
     [check('id', 'ID was not recived').notEmpty()],
     checkAuth,
-    async (req, res) => {
+    async (req: Request, res: Response) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -156,7 +156,7 @@ router.post(
         check('cash', 'cash sum was not recived').isFloat({ min: 0 }),
     ],
     checkAuth,
-    async (req, res) => {
+    async (req: Request, res: Response) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -200,7 +200,7 @@ router.post(
                 status,
                 sumBalance: cash + currentSumStokes,
             });
-            
+
             return res.json({
                 message: 'A broker account cash or/and status was corrected',
             });

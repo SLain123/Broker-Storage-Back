@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 import { hash, compare } from 'bcrypt';
@@ -26,7 +26,7 @@ router.post(
             'Default currency id was not recived',
         ).notEmpty(),
     ],
-    async (req, res) => {
+    async (req: Request, res: Response) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -73,7 +73,7 @@ router.post(
         check('email', 'Type correct email').isEmail(),
         check('password', 'Type password').exists(),
     ],
-    async (req, res) => {
+    async (req: Request, res: Response) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -108,7 +108,7 @@ router.post(
 );
 
 // /api/auth/check
-router.get('/check', checkAuth, async (req, res) => {
+router.get('/check', checkAuth, async (req: Request, res: Response) => {
     try {
         if (req.user.userId) {
             return res.json({ message: 'Token correct', validate: true });

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
 
 import { User } from '../models/User';
@@ -9,7 +9,7 @@ import { returnValidationResult } from '../utils/returnValidationResult';
 const router = Router();
 
 // /api/profile
-router.get('/', checkAuth, async (req, res) => {
+router.get('/', checkAuth, async (req: Request, res: Response) => {
     try {
         const result = await User.findById(req.user.userId)
             .populate('defaultCurrency')
@@ -40,7 +40,7 @@ router.post(
     '/',
     [check('nickName', 'User nick name is missing').isString().notEmpty()],
     checkAuth,
-    async (req, res) => {
+    async (req: Request, res: Response) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -68,7 +68,7 @@ router.post(
     '/avatar',
     [check('avatar', 'Avatar must be base64 format').isBase64()],
     checkAuth,
-    async (req, res) => {
+    async (req: Request, res: Response) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {

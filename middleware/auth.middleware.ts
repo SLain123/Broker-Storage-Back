@@ -1,6 +1,7 @@
 import { verify } from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express';
 
-export const checkAuth = (req, res, next) => {
+export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
     if (req.method === 'OPTIONS') {
         return next();
     }
