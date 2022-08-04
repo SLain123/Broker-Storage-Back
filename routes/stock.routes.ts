@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 
@@ -12,29 +12,118 @@ import { returnValidationResult } from '../utils/returnValidationResult';
 const router = Router();
 
 // /api/stock/all
-router.get('/all', checkAuth, async (req, res) => {
-    try {
-        const result = await User.findById(req.user.userId).populate([
-            {
-                path: 'stoсks',
-                populate: { path: 'broker', populate: { path: 'currency' } },
-            },
-            { path: 'stoсks', populate: 'currency' },
-        ]);
+router.post(
+    '/all',
+    [
+        check('filters', 'Incorrect filter format or no existing filter name')
+            .optional()
+            .isObject()
+            .custom(
+                (value: Object) =>
+                    value.hasOwnProperty('brokerId') ||
+                    value.hasOwnProperty('currencyId') ||
+                    value.hasOwnProperty('year') ||
+                    value.hasOwnProperty('isSold') ||
+                    value.hasOwnProperty('type'),
+            ),
+    ],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
 
-        if (!result) {
-            return return400(res, 'User not found');
+            const result = await User.findById(req.user.userId).populate([
+                {
+                    path: 'stoсks',
+                    populate: {
+                        path: 'broker',
+                        populate: { path: 'currency' },
+                    },
+                },
+                { path: 'stoсks', populate: 'currency' },
+            ]);
+
+            if (!result) {
+                return return400(res, 'User not found');
+            }
+            const { filters } = req.body;
+            let { stoсks } = result;
+
+            if (filters) {
+                if (filters.hasOwnProperty('brokerId')) {
+                    const { brokerId } = filters;
+                    if (!Types.ObjectId.isValid(brokerId)) {
+                        return return400(res, 'Wrong broker id format');
+                    } else {
+                        stoсks = stoсks.filter(
+                            ({ broker }) =>
+                                String(new Types.ObjectId(broker._id)) ===
+                                String(new Types.ObjectId(brokerId)),
+                        );
+                    }
+                }
+
+                if (filters.hasOwnProperty('currencyId')) {
+                    const { currencyId } = filters;
+                    if (!Types.ObjectId.isValid(currencyId)) {
+                        return return400(res, 'Wrong currency id format');
+                    } else {
+                        stoсks = stoсks.filter(
+                            ({ currency }) =>
+                                String(new Types.ObjectId(currency._id)) ===
+                                String(new Types.ObjectId(currencyId)),
+                        );
+                    }
+                }
+
+                if (filters.hasOwnProperty('year')) {
+                    const { year } = filters;
+                    if (isNaN(+year) || String(year).length !== 4) {
+                        return return400(res, 'Wrong year format');
+                    } else {
+                        stoсks = stoсks.filter(({ buyDate, sellDate }) => {
+                            const buyYear = buyDate.getFullYear();
+                            const sellYear = sellDate && sellDate.getFullYear();
+                            return buyYear === +year || sellYear === +year;
+                        });
+                    }
+                }
+
+                if (filters.hasOwnProperty('isSold')) {
+                    const { isSold } = filters;
+                    stoсks = stoсks.filter(
+                        ({ sellDate }) => Boolean(sellDate) === Boolean(isSold),
+                    );
+                }
+
+                if (filters.hasOwnProperty('type')) {
+                    const { type: filterType } = filters;
+                    if (
+                        filterType !== 'stock' &&
+                        filterType !== 'bond' &&
+                        filterType !== 'futures'
+                    ) {
+                        return return400(res, 'Unexisting type');
+                    } else {
+                        stoсks = stoсks.filter(
+                            ({ type }) => type === filterType,
+                        );
+                    }
+                }
+            }
+
+            return res.json({
+                message: 'Stoсks were found',
+                stoсks,
+            });
+        } catch (e) {
+            res.status(500).json({ message: 'Something was wrong...' });
         }
-        const { stoсks } = result;
-
-        return res.json({
-            message: 'Stoсks were found',
-            stoсks,
-        });
-    } catch (e) {
-        res.status(500).json({ message: 'Something was wrong...' });
-    }
-});
+    },
+);
 
 // /api/stock/buy
 router.post(
@@ -61,7 +150,7 @@ router.post(
             ),
     ],
     checkAuth,
-    async (req, res) => {
+    async (req: Request, res: Response) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
@@ -127,7 +216,7 @@ router.post(
             if (!currentBroker) {
                 return return400(res, 'Broker account was not found');
             }
-            
+
             const stockData = {
                 buyDate: new Date(buyDate),
                 title,
@@ -146,7 +235,7 @@ router.post(
                 await Broker.findByIdAndUpdate(currentBroker._id, {
                     cash: currentBroker.cash - allCost,
                     sumStokes: currentBroker.sumStokes + allCost,
-                })
+                });
 
                 await User.findByIdAndUpdate(req.user.userId, {
                     $push: {
