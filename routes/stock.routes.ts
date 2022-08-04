@@ -125,6 +125,57 @@ router.post(
     },
 );
 
+// /api/stock
+router.post(
+    '/',
+    [
+        check('id', 'ID was not recived or incorrect').custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
+    ],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
+
+            const result = await User.findById(req.user.userId).populate([
+                {
+                    path: 'stoсks',
+                    populate: {
+                        path: 'broker',
+                        populate: { path: 'currency' },
+                    },
+                },
+                { path: 'stoсks', populate: 'currency' },
+            ]);
+
+            if (!result) {
+                return return400(res, 'User not found');
+            }
+            const { stoсks } = result;
+            const stock = stoсks.filter(
+                ({ _id }) =>
+                    String(new Types.ObjectId(req.body.id)) ===
+                    String(new Types.ObjectId(_id)),
+            );
+
+            if (stock.length < 1) {
+                return return400(res, 'Stock not found');
+            }
+
+            return res.json({
+                message: 'Stoсk was found',
+                stock,
+            });
+        } catch (e) {
+            res.status(500).json({ message: 'Something was wrong...' });
+        }
+    },
+);
+
 // /api/stock/buy
 router.post(
     '/buy',

@@ -153,7 +153,10 @@ router.post(
     '/correct',
     [
         check('id', 'ID was not recived').notEmpty(),
-        check('cash', 'cash sum was not recived').isFloat({ min: 0 }),
+        check('cash', 'Cash sum was not recived').isFloat({ min: 0 }),
+        check('status', 'Incorrect status')
+            .optional()
+            .custom((status) => status === 'active' || status === 'unactive'),
     ],
     checkAuth,
     async (req: Request, res: Response) => {
@@ -164,10 +167,6 @@ router.post(
             }
 
             const { id, cash, status = 'active' } = req.body;
-
-            if (status !== 'active' && status !== 'unactive') {
-                return return400(res, 'Transferred status does not exist');
-            }
 
             if (!Types.ObjectId.isValid(id)) {
                 return return400(res, 'Broker id have wrong format');
