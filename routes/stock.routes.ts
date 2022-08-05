@@ -257,8 +257,11 @@ router.post(
             if (!isEnoghCash) {
                 return return400(res, 'Not enough cash for purchase');
             }
-            if (!currentBroker) {
-                return return400(res, 'Broker account was not found');
+            if (!currentBroker || currentBroker.status !== 'active') {
+                return return400(
+                    res,
+                    'Broker account was not found or inactive',
+                );
             }
 
             const stockData = {
@@ -327,6 +330,7 @@ router.post(
 
             const userData = await User.findById(req.user.userId).populate({
                 path: 'stocks',
+                populate: { path: 'broker' },
             });
             if (!userData) {
                 return return400(res, 'User not found');
@@ -344,6 +348,10 @@ router.post(
                     "The stock doesn't belong to the user or not exists",
                 );
             }
+            if (currentStock.broker.status !== 'active') {
+                return return400(res, 'Broker status is inactive');
+            }
+
             const sellPriceSum = sellPricePerSingle * currentStock.count - fee;
             const soldStock = await Stock.findByIdAndUpdate(id, {
                 fee: fee + currentStock.fee,
