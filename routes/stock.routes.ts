@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 
 import { User } from '../models/User';
 import { IBroker, Broker } from '../models/Broker';
-import { Stock } from '../models/Stock';
+import { Stock, IStock } from '../models/Stock';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
@@ -29,20 +29,20 @@ router.post(
 
             const result = await User.findById(req.user.userId).populate([
                 {
-                    path: 'stoсks',
+                    path: 'stocks',
                     populate: {
                         path: 'broker',
                         populate: { path: 'currency' },
                     },
                 },
-                { path: 'stoсks', populate: 'currency' },
+                { path: 'stocks', populate: 'currency' },
             ]);
 
             if (!result) {
                 return return400(res, 'User not found');
             }
-            const { stoсks } = result;
-            const stock = stoсks.filter(
+            const { stocks } = result;
+            const stock = stocks.filter(
                 ({ _id }) =>
                     String(new Types.ObjectId(req.body.id)) ===
                     String(new Types.ObjectId(_id)),
@@ -88,20 +88,20 @@ router.post(
 
             const result = await User.findById(req.user.userId).populate([
                 {
-                    path: 'stoсks',
+                    path: 'stocks',
                     populate: {
                         path: 'broker',
                         populate: { path: 'currency' },
                     },
                 },
-                { path: 'stoсks', populate: 'currency' },
+                { path: 'stocks', populate: 'currency' },
             ]);
 
             if (!result) {
                 return return400(res, 'User not found');
             }
             const { filters } = req.body;
-            let { stoсks } = result;
+            let { stocks } = result;
 
             if (filters) {
                 if (filters.hasOwnProperty('brokerId')) {
@@ -109,7 +109,7 @@ router.post(
                     if (!Types.ObjectId.isValid(brokerId)) {
                         return return400(res, 'Wrong broker id format');
                     } else {
-                        stoсks = stoсks.filter(
+                        stocks = stocks.filter(
                             ({ broker }) =>
                                 String(new Types.ObjectId(broker._id)) ===
                                 String(new Types.ObjectId(brokerId)),
@@ -122,7 +122,7 @@ router.post(
                     if (!Types.ObjectId.isValid(currencyId)) {
                         return return400(res, 'Wrong currency id format');
                     } else {
-                        stoсks = stoсks.filter(
+                        stocks = stocks.filter(
                             ({ currency }) =>
                                 String(new Types.ObjectId(currency._id)) ===
                                 String(new Types.ObjectId(currencyId)),
@@ -135,7 +135,7 @@ router.post(
                     if (isNaN(+year) || String(year).length !== 4) {
                         return return400(res, 'Wrong year format');
                     } else {
-                        stoсks = stoсks.filter(({ buyDate, sellDate }) => {
+                        stocks = stocks.filter(({ buyDate, sellDate }) => {
                             const buyYear = buyDate.getFullYear();
                             const sellYear = sellDate && sellDate.getFullYear();
                             return buyYear === +year || sellYear === +year;
@@ -145,7 +145,7 @@ router.post(
 
                 if (filters.hasOwnProperty('isSold')) {
                     const { isSold } = filters;
-                    stoсks = stoсks.filter(
+                    stocks = stocks.filter(
                         ({ sellDate }) => Boolean(sellDate) === Boolean(isSold),
                     );
                 }
@@ -159,7 +159,7 @@ router.post(
                     ) {
                         return return400(res, 'Unexisting type');
                     } else {
-                        stoсks = stoсks.filter(
+                        stocks = stocks.filter(
                             ({ type }) => type === filterType,
                         );
                     }
@@ -167,8 +167,8 @@ router.post(
             }
 
             return res.json({
-                message: 'Stoсks were found',
-                stoсks,
+                message: 'Stocks were found',
+                stocks,
             });
         } catch (e) {
             res.status(500).json({ message: 'Something was wrong...' });
@@ -283,7 +283,7 @@ router.post(
 
                 await User.findByIdAndUpdate(req.user.userId, {
                     $push: {
-                        stoсks: {
+                        stocks: {
                             _id,
                             ...stockData,
                         },
@@ -294,6 +294,70 @@ router.post(
             return res.json({
                 message: 'The stock was created as purchased',
                 stock,
+            });
+        } catch (e) {
+            res.status(500).json({ message: 'Something was wrong...' });
+        }
+    },
+);
+
+// /api/stock/sell
+router.post(
+    '/sell',
+    [
+        check('id', 'ID was not recived or incorrect').custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
+        check('sellDate', 'Date of selling was missing').isDate(),
+        check(
+            'sellPricePerSingle',
+            'Price per one of stock was not recieved',
+        ).isFloat({ min: 0 }),
+        check('fee', "Broker's fee was not recieved").isFloat({ min: 0 }),
+    ],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
+
+            const { id, sellDate, sellPricePerSingle, fee } = req.body;
+
+            const userData = await User.findById(req.user.userId).populate({
+                path: 'stocks',
+            });
+            if (!userData) {
+                return return400(res, 'User not found');
+            }
+
+            let currentStock: IStock | null = null;
+            userData.stocks.forEach((stock) => {
+                if (String(stock._id) === String(new Types.ObjectId(id))) {
+                    currentStock = stock;
+                }
+            });
+            if (!currentStock) {
+                return return400(
+                    res,
+                    "The stock doesn't belong to the user or not exists",
+                );
+            }
+            const sellPriceSum = sellPricePerSingle * currentStock.count - fee;
+            const soldStock = await Stock.findByIdAndUpdate(id, {
+                fee: fee + currentStock.fee,
+                sellDate: new Date(sellDate),
+                sellPricePerSingle,
+                sellPriceSum,
+                profite: sellPriceSum - currentStock.priceSumWithFee,
+            });
+            if (!soldStock) {
+                return return400(res, 'The stock was not found');
+            }
+
+            return res.json({
+                message: 'The stock was sold',
             });
         } catch (e) {
             res.status(500).json({ message: 'Something was wrong...' });

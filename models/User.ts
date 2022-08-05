@@ -13,7 +13,7 @@ export interface IUser extends Document {
     defaultCurrency: ICurrency;
     avatar: string | null;
     brokerAccounts: IBroker[] | [];
-    stoсks: IStock[];
+    stocks: IStock[];
     relatedPayments: IDividend[];
 }
 
@@ -33,14 +33,14 @@ const user = new Schema({
         ref: 'Broker',
         required: false,
     },
-    stoсks: {
+    stocks: {
         type: [Schema.Types.ObjectId],
         ref: 'Stock',
         required: false,
     },
-    relatedPayments: {
+    actives: {
         type: [Schema.Types.ObjectId],
-        ref: 'Dividend',
+        ref: 'Active',
         required: false,
     },
 });

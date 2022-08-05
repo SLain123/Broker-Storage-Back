@@ -50,7 +50,7 @@ router.post(
                 role: 'user',
                 defaultCurrency: currency,
                 brokerAccounts: [],
-                stoсks: [],
+                stocks: [],
                 relatedPayments: [],
             });
             await user.save();

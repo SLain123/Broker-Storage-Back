@@ -1,6 +1,8 @@
 import { Document, Schema, model } from 'mongoose';
+
 import { IBroker } from './Broker';
 import { ICurrency } from './Currency';
+import { IActive } from './Active';
 
 export interface IStock extends Document {
     buyDate: Date;
@@ -17,6 +19,7 @@ export interface IStock extends Document {
     sellPricePerSingle?: number;
     sellPriceSum?: number;
     profite?: number;
+    dividends?: IActive;
 }
 
 const stock = new Schema({
@@ -38,6 +41,11 @@ const stock = new Schema({
     sellPricePerSingle: { type: Number, required: false },
     sellPriceSum: { type: Number, required: false },
     profite: { type: Number, required: false },
+    dividends: {
+        type: Schema.Types.ObjectId,
+        ref: 'Dividend',
+        required: false,
+    },
 });
 
 export const Stock = model<IStock>('Stock', stock);

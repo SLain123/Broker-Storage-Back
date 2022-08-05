@@ -2,6 +2,7 @@ import * as express from 'express';
 import * as mongoose from 'mongoose';
 import * as formData from 'express-form-data';
 import * as dotenv from 'dotenv';
+import { Request, Response, NextFunction } from 'express';
 
 import * as authRoutes from './routes/auth.routes';
 import * as profileRoutes from './routes/profile.routes';
@@ -22,7 +23,7 @@ declare global {
     }
 }
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header(
         'Access-Control-Allow-Headers',
