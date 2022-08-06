@@ -373,4 +373,18 @@ router.post(
     },
 );
 
+// /api/stock/test
+router.post('/test', checkAuth, async (req: Request, res: Response) => {
+    try {
+        const result = getDelta(data);
+
+        return res.json({
+            message: 'Stoсk was found',
+            result
+        });
+    } catch (e) {
+        res.status(500).json({ message: 'Something was wrong...' });
+    }
+});
+
 export = router;
