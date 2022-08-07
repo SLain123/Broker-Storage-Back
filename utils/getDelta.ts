@@ -6,13 +6,15 @@ export interface IStock {
     action: 'buy' | 'sell';
 }
 
-const useBuy = (buyList: IStock[]) => {
+const calculateDelta = (list: IStock[], action: 'buy' | 'sell') => {
     let sumPrice = 0;
     let sumCount = 0;
 
-    buyList.forEach(({ single, count, fee }) => {
-        sumPrice = sumPrice + (single * count + fee);
-        sumCount = sumCount + count;
+    list.forEach(({ single, count, fee }) => {
+        const calculatedSumPrice =
+            action === 'buy' ? single * count + fee : single * count - fee;
+        sumPrice += calculatedSumPrice;
+        sumCount += count;
     });
 
     return {
@@ -21,25 +23,12 @@ const useBuy = (buyList: IStock[]) => {
     };
 };
 
-const useSell = (sellList: IStock[]) => {
-    let restCount = 0;
-    let sumFee = 0;
-
-    if (sellList.length === 0) {
-        return;
-    } else {
-        sellList.forEach(({ count, fee }) => {
-            restCount += count;
-            sumFee += fee;
-        });
-    }
-
-    return { count: restCount, singleFee: sumFee / restCount };
-};
-
-export const getDelta = (stockList: IStock[]) => {
-    let delta = 0;
-    let restCount = 0;
+export const getDeltaProfite = (stockList: IStock[]) => {
+    let deltaBuy = 0;
+    let deltaSell = 0;
+    let countBuy = 0;
+    let countSell = 0;
+    let countRest = 0;
     let error = '';
 
     const startCycle = (cycleList: IStock[]) => {
@@ -67,23 +56,32 @@ export const getDelta = (stockList: IStock[]) => {
             return resultList;
         };
 
-        const buy = useBuy(getActions('buy', allList));
-        if (delta) {
-            delta = +(
-                (delta * restCount + buy.delta * buy.count) /
-                (buy.count + restCount)
+        const buy = calculateDelta(getActions('buy', allList), 'buy');
+        if (deltaBuy) {
+            deltaBuy = +(
+                (deltaBuy * countRest + buy.delta * buy.count) /
+                (buy.count + countRest)
             ).toFixed(3);
         } else {
-            delta = buy.delta;
+            deltaBuy = buy.delta;
         }
+        countBuy += buy.count;
 
         const sell =
             allList.length > 0
-                ? useSell(getActions('sell', allList))
-                : { count: 0, singleFee: 0 };
-        restCount += buy.count - sell.count;
+                ? calculateDelta(getActions('sell', allList), 'sell')
+                : { delta: 0, count: 0 };
+        if (deltaSell) {
+            deltaSell = +(
+                (deltaSell * countSell + sell.delta * sell.count) /
+                (sell.count + countSell)
+            ).toFixed(3);
+        } else {
+            deltaSell = sell.delta;
+        }
+        countSell += sell.count;
 
-        delta += +sell.singleFee.toFixed(3);
+        countRest += buy.count - sell.count;
 
         if (allList.length > 0) {
             startCycle(allList);
@@ -91,10 +89,10 @@ export const getDelta = (stockList: IStock[]) => {
     };
 
     startCycle(stockList);
-
-    if (restCount < 1) {
-        delta = 0;
+   
+    if (countRest < 1) {
+        deltaBuy = 0;
     }
 
-    return { delta, restCount, error };
+    return { deltaBuy, countRest, deltaSell, error };
 };
