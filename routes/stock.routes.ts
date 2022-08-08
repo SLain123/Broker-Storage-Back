@@ -263,6 +263,7 @@ router.post(
                 count,
                 pricePerSingle,
                 fee,
+                action: 'buy',
             };
             const stockMainData = {
                 status: 'active',
@@ -311,19 +312,25 @@ router.post(
     },
 );
 
-// // /api/stock/sell
+// /api/stock/add
 // router.post(
-//     '/sell',
+//     '/add',
 //     [
 //         check('id', 'ID was not recived or incorrect').custom((id) =>
 //             Types.ObjectId.isValid(id),
 //         ),
-//         check('sellDate', 'Date of selling was missing').isDate(),
+//         check('date', 'Date of selling was missing').isDate(),
+//         check('count', 'Count of the stock was not specified').isFloat({
+//             min: 0,
+//         }),
 //         check(
 //             'sellPricePerSingle',
 //             'Price per one of stock was not recieved',
 //         ).isFloat({ min: 0 }),
 //         check('fee', "Broker's fee was not recieved").isFloat({ min: 0 }),
+//         check('action', '"buy" or "sell" action must specifyed').custom(
+//             (act) => act === 'buy' || act === 'sell',
+//         ),
 //     ],
 //     checkAuth,
 //     async (req: Request, res: Response) => {

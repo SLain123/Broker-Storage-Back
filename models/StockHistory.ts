@@ -5,6 +5,7 @@ export interface IHistory extends Document {
     count: number;
     pricePerSingle: number;
     fee: number;
+    action: 'buy' | 'sell';
 }
 
 const history = new Schema({
@@ -12,6 +13,7 @@ const history = new Schema({
     count: { type: Number, required: true },
     pricePerSingle: { type: Number, required: true },
     fee: { type: Number, required: true },
+    action: { type: String, enum: ['buy', 'sell'], required: true },
 });
 
-export const StockHistory = model<IHistory>('StockHistory', history);
+export const StockHistory = model<IHistory>('Stock_History', history);

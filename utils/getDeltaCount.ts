@@ -1,5 +1,4 @@
-export interface IStock {
-    title: string;
+export interface IStockData {
     count: number;
     single: number;
     fee: number;
@@ -11,7 +10,7 @@ enum Error {
     sellCountGreaterBuy = 'Error! Count of sell operations exceeds buy',
 }
 
-const calculateDelta = (list: IStock[], action: 'buy' | 'sell') => {
+const calculateDelta = (list: IStockData[], action: 'buy' | 'sell') => {
     let sumPrice = 0;
     let sumCount = 0;
 
@@ -29,7 +28,7 @@ const calculateDelta = (list: IStock[], action: 'buy' | 'sell') => {
     };
 };
 
-export const getDeltaCount = (stockList: IStock[]) => {
+export const getDeltaCount = (stockList: IStockData[]) => {
     let deltaBuy = 0;
     let deltaSell = 0;
     let countBuy = 0;
@@ -49,10 +48,10 @@ export const getDeltaCount = (stockList: IStock[]) => {
         sumSell = 0;
     };
 
-    const startCycle = (cycleList: IStock[]) => {
+    const startCycle = (cycleList: IStockData[]) => {
         const separateByAction = (
             action: 'buy' | 'sell',
-            outList: IStock[],
+            outList: IStockData[],
         ) => {
             const resultList = [];
             if (outList.length === 0) {
