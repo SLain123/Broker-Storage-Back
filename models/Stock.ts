@@ -2,33 +2,32 @@ import { Document, Schema, model } from 'mongoose';
 
 import { IBroker } from './Broker';
 import { ICurrency } from './Currency';
-import { IActive } from './Active';
+import { IDividend } from './Dividend';
+import { IHistory } from './StockHistory';
 
 export interface IStock extends Document {
-    buyDate: Date;
+    status: 'active' | 'closed';
+    lastEditedDate: Date;
     title: string;
-    count: number;
-    pricePerSingle: number;
-    priceSumWithFee: number;
-    pricePerSingleWithFee: number;
+    restCount: number;
+    deltaBuy: number;
+    deltaSell: number;
     fee: number;
     currency: ICurrency;
     broker: IBroker;
     type: 'stock' | 'bond' | 'futures';
-    sellDate?: Date;
-    sellPricePerSingle?: number;
-    sellPriceSum?: number;
-    profite?: number;
-    dividends?: IActive;
+    history: IHistory[];
+    profit?: number;
+    dividends?: IDividend[];
 }
 
 const stock = new Schema({
-    buyDate: { type: Date, required: true },
+    status: { type: String, enum: ['active', 'closed'], required: true },
+    lastEditedDate: { type: Date, required: true },
     title: { type: String, required: true },
-    count: { type: Number, required: true },
-    pricePerSingle: { type: Number, required: true },
-    priceSumWithFee: { type: Number, required: true },
-    pricePerSingleWithFee: { type: Number, required: true },
+    restCount: { type: Number, required: true },
+    deltaBuy: { type: Number, required: true },
+    deltaSell: { type: Number, required: true },
     fee: { type: Number, required: true },
     currency: {
         type: Schema.Types.ObjectId,
@@ -37,12 +36,14 @@ const stock = new Schema({
     },
     broker: { type: Schema.Types.ObjectId, ref: 'Broker', required: true },
     type: { type: String, enum: ['stock', 'bond', 'futures'], required: true },
-    sellDate: { type: Date, required: false },
-    sellPricePerSingle: { type: Number, required: false },
-    sellPriceSum: { type: Number, required: false },
+    history: {
+        type: [Schema.Types.ObjectId],
+        ref: 'StockHistory',
+        required: true,
+    },
     profite: { type: Number, required: false },
     dividends: {
-        type: Schema.Types.ObjectId,
+        type: [Schema.Types.ObjectId],
         ref: 'Dividend',
         required: false,
     },
