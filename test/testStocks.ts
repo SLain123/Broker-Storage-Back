@@ -55,6 +55,17 @@ export const thirdRightMix: IStock[] = [
     { title: 't', count: 10, single: 1000, fee: 3, action: 'buy' },
 ];
 
+export const fourthRightMix: IStock[] = [
+    { title: 't', count: 10, single: 1000, fee: 100, action: 'buy' },
+    { title: 't', count: 20, single: 500, fee: 100, action: 'buy' },
+    { title: 't', count: 30, single: 1500, fee: 200, action: 'sell' },
+    { title: 't', count: 10, single: 1000, fee: 0, action: 'buy' },
+    { title: 't', count: 5, single: 200, fee: 0, action: 'sell' },
+    { title: 't', count: 10, single: 1000, fee: 0, action: 'buy' },
+    { title: 't', count: 5, single: 2000, fee: 0, action: 'sell' },
+    { title: 't', count: 10, single: 200, fee: 0, action: 'sell' },
+];
+
 export const veryGoodProfite: IStock[] = [
     { title: 't', count: 10, single: 1000, fee: 3, action: 'buy' },
     { title: 't', count: 20, single: 1005, fee: 4, action: 'buy' },
@@ -104,4 +115,19 @@ export const sellCountGreaterBuyCount: IStock[] = [
     { title: 't', count: 10, single: 1000, fee: 3, action: 'buy' },
     { title: 't', count: 20, single: 1005, fee: 4, action: 'sell' },
     { title: 't', count: 20, single: 1005, fee: 4, action: 'buy' },
+];
+
+export const allSoldWithProfite: IStock[] = [
+    { title: 't', count: 10, single: 1000, fee: 3, action: 'buy' },
+    { title: 't', count: 20, single: 500, fee: 1, action: 'buy' },
+    { title: 't', count: 10, single: 1500, fee: 1, action: 'sell' },
+    { title: 't', count: 5, single: 1500, fee: 2, action: 'sell' },
+    { title: 't', count: 5, single: 500, fee: 10, action: 'buy' },
+    { title: 't', count: 8, single: 500, fee: 20, action: 'buy' },
+    { title: 't', count: 10, single: 1500, fee: 10, action: 'sell' },
+    { title: 't', count: 10, single: 1500, fee: 15, action: 'sell' },
+    { title: 't', count: 50, single: 500, fee: 50, action: 'buy' },
+    { title: 't', count: 50, single: 500, fee: 10, action: 'buy' },
+    { title: 't', count: 5, single: 500, fee: 0, action: 'sell' },
+    { title: 't', count: 103, single: 500, fee: 0, action: 'sell' },
 ];
