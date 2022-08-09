@@ -5,8 +5,13 @@ import { ICurrency } from './Currency';
 import { IDividend } from './Dividend';
 import { IHistory } from './StockHistory';
 
+export enum Status {
+    active = 'active',
+    closed = 'closed',
+}
+
 export interface IStock extends Document {
-    status: 'active' | 'closed';
+    status: Status;
     lastEditedDate: Date;
     title: string;
     restCount: number;
@@ -41,7 +46,7 @@ const stock = new Schema({
         ref: 'StockHistory',
         required: true,
     },
-    profite: { type: Number, required: false },
+    profit: { type: Number, required: false },
     dividends: {
         type: [Schema.Types.ObjectId],
         ref: 'Dividend',

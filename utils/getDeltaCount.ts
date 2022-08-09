@@ -1,6 +1,7 @@
 export interface IStockData {
+    date?: Date;
     count: number;
-    single: number;
+    pricePerSingle: number;
     fee: number;
     action: 'buy' | 'sell';
 }
@@ -13,18 +14,23 @@ enum Error {
 const calculateDelta = (list: IStockData[], action: 'buy' | 'sell') => {
     let sumPrice = 0;
     let sumCount = 0;
+    let sumFee = 0;
 
-    list.forEach(({ single, count, fee }) => {
+    list.forEach(({ pricePerSingle, count, fee }) => {
         const calculatedSumPrice =
-            action === 'buy' ? single * count + fee : single * count - fee;
+            action === 'buy'
+                ? pricePerSingle * count + fee
+                : pricePerSingle * count - fee;
         sumPrice += calculatedSumPrice;
         sumCount += count;
+        sumFee += fee;
     });
 
     return {
         delta: +(sumPrice / sumCount),
         count: sumCount,
         sumPrice,
+        sumFee,
     };
 };
 
@@ -36,6 +42,7 @@ export const getDeltaCount = (stockList: IStockData[]) => {
     let countRest = 0;
     let sumBuy = 0;
     let sumSell = 0;
+    let allFee = 0;
     let error = '';
 
     const resetAllMaths = () => {
@@ -46,6 +53,7 @@ export const getDeltaCount = (stockList: IStockData[]) => {
         countRest = 0;
         sumBuy = 0;
         sumSell = 0;
+        allFee = 0;
     };
 
     const startCycle = (cycleList: IStockData[]) => {
@@ -85,11 +93,12 @@ export const getDeltaCount = (stockList: IStockData[]) => {
         }
         countBuy += buy.count;
         sumBuy += buy.sumPrice;
+        allFee += buy.sumFee;
 
         const sell =
             cycleList.length > 0
                 ? calculateDelta(separateByAction('sell', cycleList), 'sell')
-                : { delta: 0, count: 0, sumPrice: 0 };
+                : { delta: 0, count: 0, sumPrice: 0, sumFee: 0 };
         if (deltaSell) {
             deltaSell = +(
                 (deltaSell * countSell + sell.delta * sell.count) /
@@ -100,6 +109,7 @@ export const getDeltaCount = (stockList: IStockData[]) => {
         }
         countSell += sell.count;
         sumSell += sell.sumPrice;
+        allFee += sell.sumFee;
 
         countRest += buy.count - sell.count;
 
@@ -129,6 +139,7 @@ export const getDeltaCount = (stockList: IStockData[]) => {
         countRest,
         sumBuy,
         sumSell,
+        allFee,
         error,
     };
 };

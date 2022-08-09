@@ -3,12 +3,14 @@ import { check, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 
 import { User } from '../models/User';
-import { IBroker, Broker } from '../models/Broker';
-import { Stock, IStock } from '../models/Stock';
+import { IBroker, Broker, IBrokerData } from '../models/Broker';
+import { Stock, IStock, Status } from '../models/Stock';
 import { StockHistory } from '../models/StockHistory';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
+import { getProfite } from './../utils/getProfit';
+import { getDeltaCount, IStockData } from './../utils/getDeltaCount';
 
 const router = Router();
 
@@ -183,7 +185,7 @@ router.post(
     [
         check('date', 'Date of buying was missing').isDate(),
         check('title', 'Title of the stock was not received').isString(),
-        check('count', 'Count of the stock was not specified').isFloat({
+        check('count', 'Count of the stock was not specified').isInt({
             min: 0,
         }),
         check(
@@ -217,9 +219,8 @@ router.post(
                 return return400(res, 'User not found');
             }
 
-            let currentBroker = null;
-            let isEnoghCash = true;
-            const allCost = pricePerSingle * count + fee;
+            let currentBroker: (IBrokerData & { _id: string }) | null = null;
+            const allCost = +pricePerSingle * +count + +fee;
             const brokerObjectId = new Types.ObjectId(brokerId);
             const { brokerAccounts } = userData;
             brokerAccounts.forEach((brokerItem: IBroker) => {
@@ -228,27 +229,23 @@ router.post(
                     title,
                     currency,
                     cash,
-                    sumStokes,
+                    sumStocks,
                     sumBalance,
                     status,
                 } = brokerItem;
                 if (String(_id) === String(brokerObjectId)) {
-                    if (allCost > cash) {
-                        isEnoghCash = false;
-                    }
-
                     currentBroker = {
                         _id,
                         title,
                         currency,
                         cash,
-                        sumStokes,
+                        sumStocks,
                         sumBalance,
                         status,
                     };
                 }
             });
-            if (!isEnoghCash) {
+            if (currentBroker.cash < allCost) {
                 return return400(res, 'Not enough cash for purchase');
             }
             if (!currentBroker || currentBroker.status !== 'active') {
@@ -259,23 +256,24 @@ router.post(
             }
 
             const historyData = {
-                date,
-                count,
-                pricePerSingle,
-                fee,
+                date: new Date(date),
+                count: +count,
+                pricePerSingle: +pricePerSingle,
+                fee: +fee,
                 action: 'buy',
             };
             const stockMainData = {
                 status: 'active',
                 lastEditedDate: new Date(date),
                 title,
-                restCount: count,
+                restCount: +count,
                 deltaBuy: allCost / count,
                 deltaSell: 0,
-                fee,
+                fee: +fee,
                 currency: currentBroker.currency,
                 broker: currentBroker,
                 type,
+                profit: 0,
             };
 
             const history = new StockHistory(historyData);
@@ -288,7 +286,7 @@ router.post(
                 await stock.save().then(async ({ _id }) => {
                     await Broker.findByIdAndUpdate(currentBroker._id, {
                         cash: currentBroker.cash - allCost,
-                        sumStokes: currentBroker.sumStokes + allCost,
+                        sumStocks: currentBroker.sumStocks + allCost,
                     });
 
                     await User.findByIdAndUpdate(req.user.userId, {
@@ -313,78 +311,147 @@ router.post(
 );
 
 // /api/stock/add
-// router.post(
-//     '/add',
-//     [
-//         check('id', 'ID was not recived or incorrect').custom((id) =>
-//             Types.ObjectId.isValid(id),
-//         ),
-//         check('date', 'Date of selling was missing').isDate(),
-//         check('count', 'Count of the stock was not specified').isFloat({
-//             min: 0,
-//         }),
-//         check(
-//             'sellPricePerSingle',
-//             'Price per one of stock was not recieved',
-//         ).isFloat({ min: 0 }),
-//         check('fee', "Broker's fee was not recieved").isFloat({ min: 0 }),
-//         check('action', '"buy" or "sell" action must specifyed').custom(
-//             (act) => act === 'buy' || act === 'sell',
-//         ),
-//     ],
-//     checkAuth,
-//     async (req: Request, res: Response) => {
-//         try {
-//             const errors = validationResult(req);
-//             if (!errors.isEmpty()) {
-//                 return returnValidationResult(res, errors);
-//             }
+router.post(
+    '/add',
+    [
+        check('id', 'ID was not recived or incorrect').custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
+        check('date', 'Date of selling was missing').isDate(),
+        check('count', 'Count of the stock was not specified').isInt({
+            min: 0,
+        }),
+        check(
+            'pricePerSingle',
+            'Price per one of stock was not recieved',
+        ).isFloat({ min: 0 }),
+        check('fee', "Broker's fee was not recieved").isFloat({ min: 0 }),
+        check('action', '"buy" or "sell" action must specifyed').custom(
+            (act) => act === 'buy' || act === 'sell',
+        ),
+    ],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
 
-//             const { id, sellDate, sellPricePerSingle, fee } = req.body;
+            const { id, date, count, pricePerSingle, fee, action } = req.body;
 
-//             const userData = await User.findById(req.user.userId).populate({
-//                 path: 'stocks',
-//                 populate: { path: 'broker' },
-//             });
-//             if (!userData) {
-//                 return return400(res, 'User not found');
-//             }
+            const userData = await User.findById(req.user.userId).populate([
+                {
+                    path: 'stocks',
+                    populate: { path: 'history', model: 'Stock_History' },
+                },
+                {
+                    path: 'stocks',
+                    populate: { path: 'broker' },
+                },
+            ]);
+            if (!userData) {
+                return return400(res, 'User not found');
+            }
 
-//             let currentStock: IStock | null = null;
-//             userData.stocks.forEach((stock) => {
-//                 if (String(stock._id) === String(new Types.ObjectId(id))) {
-//                     currentStock = stock;
-//                 }
-//             });
-//             if (!currentStock) {
-//                 return return400(
-//                     res,
-//                     "The stock doesn't belong to the user or not exists",
-//                 );
-//             }
-//             if (currentStock.broker.status !== 'active') {
-//                 return return400(res, 'Broker status is inactive');
-//             }
+            let currentStock: IStock | null = null;
+            const sumBuyCost = +pricePerSingle * +count + +fee;
+            const sumSellCost = +pricePerSingle * +count - +fee;
+            userData.stocks.forEach((stock) => {
+                if (String(stock._id) === String(new Types.ObjectId(id))) {
+                    currentStock = stock;
+                }
+            });
+            if (!currentStock) {
+                return return400(
+                    res,
+                    "The stock doesn't belong to the user or not exists",
+                );
+            }
 
-//             const sellPriceSum = sellPricePerSingle * currentStock.count - fee;
-//             const soldStock = await Stock.findByIdAndUpdate(id, {
-//                 fee: fee + currentStock.fee,
-//                 sellDate: new Date(sellDate),
-//                 sellPricePerSingle,
-//                 sellPriceSum,
-//                 profite: sellPriceSum - currentStock.priceSumWithFee,
-//             });
-//             if (!soldStock) {
-//                 return return400(res, 'The stock was not found');
-//             }
+            if (currentStock.broker.status !== 'active') {
+                return return400(res, 'Broker status is inactive');
+            }
+            if (currentStock.broker.cash < sumBuyCost && action === 'buy') {
+                return return400(res, 'Not enough cash for purchase');
+            }
+            if (currentStock.status !== Status.active) {
+                return return400(res, 'The stock already have closed status');
+            }
 
-//             return res.json({
-//                 message: 'The stock was sold',
-//             });
-//         } catch (e) {
-//             res.status(500).json({ message: 'Something was wrong...' });
-//         }
-//     },
-// );
+            const historyData: IStockData = {
+                date: new Date(date),
+                count: +count,
+                pricePerSingle: +pricePerSingle,
+                fee: +fee,
+                action,
+            };
+
+            const calculatedResults = getDeltaCount([
+                ...currentStock.history,
+                historyData,
+            ]);
+            const profitData = getProfite(calculatedResults);
+            if (profitData.error || calculatedResults.error) {
+                return return400(res, calculatedResults.error);
+            }
+
+            const { countRest, deltaBuy, deltaSell, allFee } =
+                calculatedResults;
+            const updatedMainStock = {
+                status: countRest ? Status.active : Status.closed,
+                lastEditedDate: new Date(date),
+                restCount: countRest,
+                deltaBuy,
+                deltaSell,
+                fee: allFee,
+                profit: profitData.profit,
+            };
+
+            const history = new StockHistory(historyData);
+            history.save().then(async ({ _id }) => {
+                await Stock.findByIdAndUpdate(id, {
+                    ...updatedMainStock,
+                    $push: {
+                        history: {
+                            _id,
+                            ...historyData,
+                        },
+                    },
+                });
+
+                let sumPrice = 0;
+                const freshUserData = await User.findById(
+                    req.user.userId,
+                ).populate({
+                    path: 'stocks',
+                });
+                freshUserData.stocks.forEach(({ deltaBuy, restCount }) => {
+                    sumPrice += deltaBuy * restCount;
+                });
+
+                const newCash =
+                    action === 'buy'
+                        ? currentStock.broker.cash - sumBuyCost
+                        : currentStock.broker.cash + sumSellCost;
+                const newSumStocks =
+                    action === 'buy'
+                        ? currentStock.broker.sumStocks + sumBuyCost
+                        : sumPrice;
+                await Broker.findByIdAndUpdate(currentStock.broker._id, {
+                    cash: newCash,
+                    sumStocks: newSumStocks,
+                    sumBalance: newCash + newSumStocks,
+                });
+            });
+
+            return res.json({
+                message: `Action <${action}> was added in stock history`,
+            });
+        } catch (e) {
+            res.status(500).json({ message: 'Something was wrong...' });
+        }
+    },
+);
 
 export = router;

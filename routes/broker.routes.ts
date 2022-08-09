@@ -65,26 +65,28 @@ router.post(
                 title,
                 currency,
                 cash,
-                sumStokes: 0,
+                sumStocks: 0,
                 sumBalance: cash,
                 status: 'active',
             };
 
             const broker = new Broker(brokerData);
             broker.save().then(async ({ _id }) => {
+                const brokerDataWithId = {
+                    _id,
+                    ...brokerData,
+                };
+
                 await User.findByIdAndUpdate(req.user.userId, {
                     $push: {
-                        brokerAccounts: {
-                            _id,
-                            ...brokerData,
-                        },
+                        brokerAccounts: brokerDataWithId,
                     },
                 });
-            });
 
-            return res.json({
-                message: 'A broker account has been created',
-                brokerData,
+                return res.json({
+                    message: 'A broker account has been created',
+                    broker: brokerDataWithId,
+                });
             });
         } catch (e) {
             res.status(500).json({ message: 'Something was wrong...' });
@@ -175,15 +177,15 @@ router.post(
                 return return400(res, 'User not found');
             }
 
-            let currentSumStokes = 0;
+            let currentSumStocks = 0;
             let oldTitle = '';
             let findIndex = -1;
             const recivedId = new Types.ObjectId(id);
             const { brokerAccounts } = userData;
             brokerAccounts.forEach((broker: IBroker, index) => {
-                const { _id, title, sumStokes } = broker;
+                const { _id, title, sumStocks } = broker;
                 if (String(_id) === String(recivedId)) {
-                    currentSumStokes = sumStokes;
+                    currentSumStocks = sumStocks;
                     findIndex = index;
                     oldTitle = title;
                 }
@@ -196,7 +198,7 @@ router.post(
                 title: title ? title : oldTitle,
                 cash,
                 status,
-                sumBalance: Number(cash) + Number(currentSumStokes),
+                sumBalance: Number(cash) + Number(currentSumStocks),
             });
 
             return res.json({

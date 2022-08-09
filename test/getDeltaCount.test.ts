@@ -21,6 +21,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(0);
         expect(result.countSell).toBe(0);
         expect(result.countRest).toBe(150);
+        expect(result.allFee).toBe(115);
         expect(result.error).toBe('');
     });
 
@@ -30,6 +31,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(499.3888888888889);
         expect(result.countSell).toBe(180);
         expect(result.countRest).toBe(0);
+        expect(result.allFee).toBe(211);
         expect(result.error).toBe('');
     });
 
@@ -39,6 +41,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(1374.3);
         expect(result.countSell).toBe(40);
         expect(result.countRest).toBe(103);
+        expect(result.allFee).toBe(122);
         expect(result.error).toBe('');
     });
 
@@ -48,6 +51,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(730.4461538461538);
         expect(result.countSell).toBe(65);
         expect(result.countRest).toBe(5);
+        expect(result.allFee).toBe(84);
         expect(result.error).toBe('');
     });
 
@@ -57,6 +61,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(999.9571428571429);
         expect(result.countSell).toBe(70);
         expect(result.countRest).toBe(20);
+        expect(result.allFee).toBe(30);
         expect(result.error).toBe('');
     });
 
@@ -66,6 +71,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(1156);
         expect(result.countSell).toBe(50);
         expect(result.countRest).toBe(0);
+        expect(result.allFee).toBe(400);
         expect(result.error).toBe('');
     });
 
@@ -75,6 +81,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(4999.142857142857);
         expect(result.countSell).toBe(350);
         expect(result.countRest).toBe(20);
+        expect(result.allFee).toBe(353);
         expect(result.error).toBe('');
     });
 
@@ -84,6 +91,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(1369.0566666666666);
         expect(result.countSell).toBe(900);
         expect(result.countRest).toBe(100);
+        expect(result.allFee).toBe(152);
         expect(result.error).toBe('');
     });
 
@@ -93,6 +101,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(497.22222222222223);
         expect(result.countSell).toBe(360);
         expect(result.countRest).toBe(20);
+        expect(result.allFee).toBe(558);
         expect(result.error).toBe('');
     });
 
@@ -102,6 +111,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(744.5594405594405);
         expect(result.countSell).toBe(143);
         expect(result.countRest).toBe(0);
+        expect(result.allFee).toBe(122);
         expect(result.error).toBe('');
     });
 
@@ -111,6 +121,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(0);
         expect(result.countSell).toBe(0);
         expect(result.countRest).toBe(0);
+        expect(result.allFee).toBe(0);
         expect(result.error).toContain('Error!');
     });
 
@@ -120,6 +131,7 @@ describe('getDelta func must to return correct result for all cases', () => {
         expect(result.deltaSell).toBe(0);
         expect(result.countSell).toBe(0);
         expect(result.countRest).toBe(0);
+        expect(result.allFee).toBe(0);
         expect(result.error).toContain('Error!');
     });
 });
