@@ -9,6 +9,7 @@ import { Currency } from '../models/Currency';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
+import { Error, Success, Val } from '../utils/getTexts';
 
 const router = Router();
 
@@ -16,15 +17,14 @@ const router = Router();
 router.post(
     '/register',
     [
-        check('email', 'Wrong email format').isEmail(),
-        check('password', 'Uncorrect password, minimum 6 symbols').isLength({
+        check('email', Val.wrongEmail).isEmail(),
+        check('password', Val.incorrectPassword).isLength({
             min: 6,
         }),
-        check('nickName', 'User nick name is missing').isString(),
-        check(
-            'defaultCurrencyId',
-            'Default currency ID was not recived or incorrect',
-        ).custom((id) => Types.ObjectId.isValid(id)),
+        check('nickName', Val.missingNick).isString(),
+        check('defaultCurrencyId', Val.incorrectDefCurrencyId).custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
     ],
     async (req: Request, res: Response) => {
         try {
@@ -37,7 +37,7 @@ router.post(
 
             const candidateByMail = await User.findOne({ email });
             if (candidateByMail) {
-                return return400(res, 'User email already exists!');
+                return return400(res, Error.alreadyExistsUser);
             }
 
             const currency = await Currency.findById(defaultCurrencyId);
@@ -55,9 +55,9 @@ router.post(
             });
             await user.save();
 
-            res.status(201).json({ message: 'User was create!' });
+            res.status(201).json({ message: Success.userCreate });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -66,8 +66,8 @@ router.post(
 router.post(
     '/login',
     [
-        check('email', 'Type correct email').isEmail(),
-        check('password', 'Type password').exists(),
+        check('email', Val.incorrectEmail).isEmail(),
+        check('password', Val.emptyPassword).exists(),
     ],
     async (req: Request, res: Response) => {
         try {
@@ -80,12 +80,12 @@ router.post(
 
             const user = await User.findOne({ email });
             if (!user) {
-                return return400(res, "User doesn't exist!");
+                return return400(res, Error.unexistedUser);
             }
 
             const isMatch = await compare(password, user?.password);
             if (!isMatch) {
-                return return400(res, 'Password incorrect!');
+                return return400(res, Error.incorrectPassword);
             }
 
             const token = sign({ userId: user.id }, process.env.JWT_SECRET, {
@@ -95,10 +95,10 @@ router.post(
             res.json({
                 token,
                 userId: user.id,
-                message: 'Success!',
+                message: Success.success,
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -107,12 +107,12 @@ router.post(
 router.get('/check', checkAuth, async (req: Request, res: Response) => {
     try {
         if (req.user.userId) {
-            return res.json({ message: 'Token correct', validate: true });
+            return res.json({ message: Success.tokenOk, validate: true });
         } else {
-            return res.json({ message: 'Token uncorrect', validate: false });
+            return res.json({ message: Error.incorrectToker, validate: false });
         }
     } catch (e) {
-        res.status(500).json({ message: 'Something was wrong...' });
+        res.status(500).json({ message: Error.somethingWrong });
     }
 });
 

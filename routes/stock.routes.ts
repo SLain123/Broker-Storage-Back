@@ -5,23 +5,20 @@ import { Types } from 'mongoose';
 import { User } from '../models/User';
 import { IBroker, Broker, IBrokerData } from '../models/Broker';
 import { Stock, IStock, Status } from '../models/Stock';
-import { IHistory, StockHistory } from '../models/StockHistory';
+import { IHistory, StockHistory, IHistoryData } from '../models/StockHistory';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
 import { getProfite } from './../utils/getProfit';
-import { getDeltaCount, IStockData } from './../utils/getDeltaCount';
+import { getDeltaCount } from './../utils/getDeltaCount';
+import { Error, Success, Val } from '../utils/getTexts';
 
 const router = Router();
 
 // /api/stock
 router.post(
     '/',
-    [
-        check('id', 'ID was not recived or incorrect').custom((id) =>
-            Types.ObjectId.isValid(id),
-        ),
-    ],
+    [check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id))],
     checkAuth,
     async (req: Request, res: Response) => {
         try {
@@ -46,7 +43,7 @@ router.post(
             ]);
 
             if (!result) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
             const { stocks } = result;
             const stock = stocks.filter(
@@ -56,15 +53,15 @@ router.post(
             );
 
             if (stock.length < 1) {
-                return return400(res, 'Stock not found');
+                return return400(res, Error.stockNotFound);
             }
 
             return res.json({
-                message: 'Stoсk was found',
+                message: Success.stockFound,
                 stock,
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -73,7 +70,7 @@ router.post(
 router.post(
     '/all',
     [
-        check('filters', 'Incorrect filter format or no existing filter name')
+        check('filters', Val.incorrectFilters)
             .optional()
             .isObject()
             .custom(
@@ -105,7 +102,7 @@ router.post(
             ]);
 
             if (!result) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
             const { filters } = req.body;
             let { stocks } = result;
@@ -114,7 +111,7 @@ router.post(
                 if (filters.hasOwnProperty('brokerId')) {
                     const { brokerId } = filters;
                     if (!Types.ObjectId.isValid(brokerId)) {
-                        return return400(res, 'Wrong broker id format');
+                        return return400(res, Error.wrongBrokerId);
                     } else {
                         stocks = stocks.filter(
                             ({ broker }) =>
@@ -127,7 +124,7 @@ router.post(
                 if (filters.hasOwnProperty('currencyId')) {
                     const { currencyId } = filters;
                     if (!Types.ObjectId.isValid(currencyId)) {
-                        return return400(res, 'Wrong currency id format');
+                        return return400(res, Error.wrongCurrencyId);
                     } else {
                         stocks = stocks.filter(
                             ({ currency }) =>
@@ -140,7 +137,7 @@ router.post(
                 if (filters.hasOwnProperty('year')) {
                     const { year } = filters;
                     if (isNaN(+year) || String(year).length !== 4) {
-                        return return400(res, 'Wrong year format');
+                        return return400(res, Error.wrongYear);
                     } else {
                         stocks = stocks.filter(({ lastEditedDate }) => {
                             return lastEditedDate.getFullYear() === +year;
@@ -151,7 +148,7 @@ router.post(
                 if (filters.hasOwnProperty('status')) {
                     const { status: stat } = filters;
                     if (stat !== 'active' && stat !== 'closed') {
-                        return return400(res, 'Unexisting status');
+                        return return400(res, Error.wrongStatus);
                     } else {
                         stocks = stocks.filter(({ status }) => stat === status);
                     }
@@ -164,7 +161,7 @@ router.post(
                         filterType !== 'bond' &&
                         filterType !== 'futures'
                     ) {
-                        return return400(res, 'Unexisting type');
+                        return return400(res, Error.wrongType);
                     } else {
                         stocks = stocks.filter(
                             ({ type }) => type === filterType,
@@ -174,11 +171,11 @@ router.post(
             }
 
             return res.json({
-                message: 'Stocks were found',
+                message: Success.stocksFound,
                 stocks,
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -187,20 +184,17 @@ router.post(
 router.post(
     '/create',
     [
-        check('date', 'Date of buying was missing').isDate(),
-        check('title', 'Title of the stock was not received').isString(),
-        check('count', 'Count of the stock was not specified').isInt({
+        check('date', Val.missingDate).isDate(),
+        check('title', Val.missingStockTitle).isString(),
+        check('count', Val.missingCount).isInt({
             min: 0,
         }),
-        check(
-            'pricePerSingle',
-            'Price per one of stock was not recieved',
-        ).isFloat({ min: 0 }),
-        check('fee', "Broker's fee was not recieved").isFloat({ min: 0 }),
-        check('brokerId', 'Broker ID was not recived or incorrect').custom(
-            (id) => Types.ObjectId.isValid(id),
+        check('pricePerSingle', Val.missingSinglePrice).isFloat({ min: 0 }),
+        check('fee', Val.missingFee).isFloat({ min: 0 }),
+        check('brokerId', Val.incorrectBrokerId).custom((id) =>
+            Types.ObjectId.isValid(id),
         ),
-        check('type', 'Type of stock was not recived').custom(
+        check('type', Val.missingType).custom(
             (type) => type === 'stock' || type === 'bond' || type === 'futures',
         ),
     ],
@@ -220,7 +214,7 @@ router.post(
                 populate: { path: 'currency' },
             });
             if (!userData) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
 
             let currentBroker: (IBrokerData & { _id: string }) | null = null;
@@ -250,13 +244,10 @@ router.post(
                 }
             });
             if (currentBroker.cash < allCost) {
-                return return400(res, 'Not enough cash for purchase');
+                return return400(res, Error.notEnoughtCash);
             }
             if (!currentBroker || currentBroker.status !== 'active') {
-                return return400(
-                    res,
-                    'Broker account was not found or inactive',
-                );
+                return return400(res, Error.brokerNotFound);
             }
 
             const historyData = {
@@ -303,13 +294,13 @@ router.post(
                     });
 
                     return res.json({
-                        message: 'The stock was created as purchased',
+                        message: Success.stockCreated,
                         stock,
                     });
                 });
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -318,19 +309,14 @@ router.post(
 router.post(
     '/add',
     [
-        check('id', 'ID was not recived or incorrect').custom((id) =>
-            Types.ObjectId.isValid(id),
-        ),
-        check('date', 'Date of selling was missing').isDate(),
-        check('count', 'Count of the stock was not specified').isInt({
+        check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id)),
+        check('date', Val.missingDate).isDate(),
+        check('count', Val.missingCount).isInt({
             min: 0,
         }),
-        check(
-            'pricePerSingle',
-            'Price per one of stock was not recieved',
-        ).isFloat({ min: 0 }),
-        check('fee', "Broker's fee was not recieved").isFloat({ min: 0 }),
-        check('action', '"buy" or "sell" action must specifyed').custom(
+        check('pricePerSingle', Val.missingSinglePrice).isFloat({ min: 0 }),
+        check('fee', Val.missingFee).isFloat({ min: 0 }),
+        check('action', Val.missingAction).custom(
             (act) => act === 'buy' || act === 'sell',
         ),
     ],
@@ -355,7 +341,7 @@ router.post(
                 },
             ]);
             if (!userData) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
 
             let currentStock: IStock | null = null;
@@ -367,23 +353,20 @@ router.post(
                 }
             });
             if (!currentStock) {
-                return return400(
-                    res,
-                    "The stock doesn't belong to the user or not exists",
-                );
+                return return400(res, Error.inexistedStock);
             }
 
             if (currentStock.broker.status !== 'active') {
-                return return400(res, 'Broker status is inactive');
+                return return400(res, Error.inactiveBroker);
             }
             if (currentStock.broker.cash < sumBuyCost && action === 'buy') {
-                return return400(res, 'Not enough cash for purchase');
+                return return400(res, Error.notEnoughtCash);
             }
             if (currentStock.status !== Status.active) {
-                return return400(res, 'The stock already have closed status');
+                return return400(res, Error.inactiveStock);
             }
 
-            const historyData: IStockData = {
+            const historyData: IHistoryData = {
                 date: new Date(date),
                 count: +count,
                 pricePerSingle: +pricePerSingle,
@@ -449,7 +432,7 @@ router.post(
                 message: `Action <${action}> was added in stock history`,
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -457,11 +440,7 @@ router.post(
 // /api/stock/remove
 router.post(
     '/remove',
-    [
-        check('id', 'ID was not recived or incorrect').custom((id) =>
-            Types.ObjectId.isValid(id),
-        ),
-    ],
+    [check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id))],
     checkAuth,
     async (req: Request, res: Response) => {
         try {
@@ -481,7 +460,7 @@ router.post(
                 },
             ]);
             if (!userData) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
             const { stocks } = userData;
             let currentStock: IStock | null = null;
@@ -502,31 +481,22 @@ router.post(
                 });
             });
             if (!currentStock) {
-                return return400(
-                    res,
-                    "Stock doesn't belong to the user or not exists",
-                );
+                return return400(res, Error.inexistedStock);
             }
 
             const { _id, broker, history } = currentStock;
             if (broker.status !== 'active') {
-                return return400(res, 'Broker status is inactive');
+                return return400(res, Error.inactiveBroker);
             }
             if (historyIndex === 0 && history.length > 1) {
-                return return400(
-                    res,
-                    'Stock cannot be deleted because this operation is first and still exists other operations',
-                );
+                return return400(res, Error.firstStockCantBeDeleted);
             }
 
             const removedHistoryItem = await StockHistory.findByIdAndDelete(
                 req.body.id,
             );
             if (!removedHistoryItem) {
-                return return400(
-                    res,
-                    'Item of history was not found in main stock',
-                );
+                return return400(res, Error.historyStockNotFound);
             }
 
             if (history.length < 2) {
@@ -588,10 +558,10 @@ router.post(
             });
 
             return res.json({
-                message: `The stock was removed`,
+                message: Success.stockRemoved,
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );

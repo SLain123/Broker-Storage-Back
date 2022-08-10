@@ -8,6 +8,7 @@ import { Currency } from '../models/Currency';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
+import { Error, Success, Val } from '../utils/getTexts';
 
 const router = Router();
 
@@ -20,15 +21,15 @@ router.get('/', checkAuth, async (req: Request, res: Response) => {
         });
 
         if (!result) {
-            return return400(res, 'User not found');
+            return return400(res, Error.userNotFound);
         }
 
         return res.json({
-            message: 'A broker account(s) has been find',
+            message: Success.brokerFound,
             brokerAccounts: result.brokerAccounts,
         });
     } catch (e) {
-        res.status(500).json({ message: 'Something was wrong...' });
+        res.status(500).json({ message: Error.somethingWrong });
     }
 });
 
@@ -36,9 +37,9 @@ router.get('/', checkAuth, async (req: Request, res: Response) => {
 router.post(
     '/',
     [
-        check('title', 'Title of broker is missing').isString(),
-        check('currencyId', 'Currency ID was not recived or incorrect').custom(
-            (id) => Types.ObjectId.isValid(id),
+        check('title', Val.missingBrokerTitle).isString(),
+        check('currencyId', Val.incorrectCurrencyId).custom((id) =>
+            Types.ObjectId.isValid(id),
         ),
     ],
     checkAuth,
@@ -53,12 +54,12 @@ router.post(
 
             const userData = await User.findById(req.user.userId);
             if (!userData) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
 
             const currency = await Currency.findById(currencyId);
             if (!currency) {
-                return return400(res, 'Currency was not found');
+                return return400(res, Error.currencyNotFound);
             }
 
             const brokerData = {
@@ -84,12 +85,12 @@ router.post(
                 });
 
                 return res.json({
-                    message: 'A broker account has been created',
+                    message: Success.createdBroker,
                     broker: brokerDataWithId,
                 });
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -97,11 +98,7 @@ router.post(
 // /api/broker/remove
 router.post(
     '/remove',
-    [
-        check('id', 'ID was not recived or incorrect').custom((id) =>
-            Types.ObjectId.isValid(id),
-        ),
-    ],
+    [check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id))],
     checkAuth,
     async (req: Request, res: Response) => {
         try {
@@ -112,13 +109,13 @@ router.post(
 
             const userData = await User.findById(req.user.userId);
             if (!userData) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
 
             const recivedId = new Types.ObjectId(req.body.id);
             const removingResult = await Broker.findByIdAndDelete(recivedId);
             if (!removingResult) {
-                return return400(res, 'Broker account not found');
+                return return400(res, Error.brokerNotFound);
             }
 
             let findIndex = -1;
@@ -139,10 +136,10 @@ router.post(
             }
 
             return res.json({
-                message: 'A broker account has been removed',
+                message: Success.removedBroker,
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -151,12 +148,10 @@ router.post(
 router.post(
     '/correct',
     [
-        check('id', 'ID was not recived or incorrect').custom((id) =>
-            Types.ObjectId.isValid(id),
-        ),
-        check('title', 'Incorrect title').optional().isString().notEmpty(),
-        check('cash', 'Cash sum was not recived').isFloat({ min: 0 }),
-        check('status', 'Incorrect status')
+        check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id)),
+        check('title', Val.incorrectTitle).optional().isString().notEmpty(),
+        check('cash', Val.cashNotRecived).isFloat({ min: 0 }),
+        check('status', Val.incorrectStatus)
             .optional()
             .custom((status) => status === 'active' || status === 'unactive'),
     ],
@@ -174,7 +169,7 @@ router.post(
                 'brokerAccounts',
             );
             if (!userData) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
 
             let currentSumStocks = 0;
@@ -191,7 +186,7 @@ router.post(
                 }
             });
             if (findIndex === -1) {
-                return return400(res, 'Broker account not found');
+                return return400(res, Error.brokerNotFound);
             }
 
             await Broker.findByIdAndUpdate(id, {
@@ -202,10 +197,10 @@ router.post(
             });
 
             return res.json({
-                message: 'A broker account cash or/and status was corrected',
+                message: Success.brokerChanged,
             });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );

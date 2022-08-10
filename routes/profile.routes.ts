@@ -5,40 +5,36 @@ import { User } from '../models/User';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
+import { Error, Success, Val } from '../utils/getTexts';
 
 const router = Router();
 
 // /api/profile
 router.get('/', checkAuth, async (req: Request, res: Response) => {
     try {
-        const result = await User.findById(req.user.userId)
+        const user = await User.findById(req.user.userId)
             .populate('defaultCurrency')
             .populate({
                 path: 'brokerAccounts',
                 populate: { path: 'currency' },
             });
-        if (!result) {
-            return return400(res, 'User not found');
+        if (!user) {
+            return return400(res, Error.userNotFound);
         }
 
-        const { nickName, avatar, defaultCurrency, brokerAccounts } = result;
-
         return res.json({
-            message: 'User found',
-            nickName,
-            avatar,
-            defaultCurrency,
-            brokerAccounts,
+            message: Success.userFound,
+            user,
         });
     } catch (e) {
-        res.status(500).json({ message: 'Something was wrong...' });
+        res.status(500).json({ message: Error.somethingWrong });
     }
 });
 
 // /api/profile
 router.post(
     '/',
-    [check('nickName', 'User nick name is missing').isString()],
+    [check('nickName', Val.missingNick).isString()],
     checkAuth,
     async (req: Request, res: Response) => {
         try {
@@ -53,12 +49,12 @@ router.post(
                 nickName,
             });
             if (!result) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
 
-            return res.json({ message: 'User data has been changed' });
+            return res.json({ message: Success.userChanged });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );
@@ -66,7 +62,7 @@ router.post(
 // /api/profile/avatar
 router.post(
     '/avatar',
-    [check('avatar', 'Avatar must be base64 format').isBase64()],
+    [check('avatar', Val.wrongAvatar).isBase64()],
     checkAuth,
     async (req: Request, res: Response) => {
         try {
@@ -81,12 +77,12 @@ router.post(
                 avatar,
             });
             if (!result) {
-                return return400(res, 'User not found');
+                return return400(res, Error.userNotFound);
             }
 
-            return res.json({ message: 'User data has been changed' });
+            return res.json({ message: Success.userChanged });
         } catch (e) {
-            res.status(500).json({ message: 'Something was wrong...' });
+            res.status(500).json({ message: Error.somethingWrong });
         }
     },
 );

@@ -1,5 +1,6 @@
 import { verify } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import { Error } from '../utils/getTexts';
 
 export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
     if (req.method === 'OPTIONS') {
@@ -11,7 +12,7 @@ export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
 
         if (!token) {
             return res.status(401).json({
-                message: 'Unauthorized! Token missing in the request',
+                message: Error.missingToker,
             });
         }
 
@@ -23,7 +24,7 @@ export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
         next();
     } catch (err) {
         res.status(401).json({
-            message: 'Unauthorized! Token missing or uncorrect',
+            message: Error.missingToker,
         });
     }
 };

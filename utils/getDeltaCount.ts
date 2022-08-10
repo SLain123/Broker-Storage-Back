@@ -1,15 +1,7 @@
-export interface IStockData {
-    date?: Date;
-    count: number;
-    pricePerSingle: number;
-    fee: number;
-    action: 'buy' | 'sell';
-}
+import { Error } from '../utils/getTexts';
+import { IHistoryData } from '../models/StockHistory';
 
-enum Error {
-    firstSell = "Error! Sell operation must't exist before buy",
-    sellCountGreaterBuy = 'Error! Count of sell operations exceeds buy',
-}
+export interface IStockData extends Omit<IHistoryData, 'date'> {}
 
 const calculateDelta = (list: IStockData[], action: 'buy' | 'sell') => {
     let sumPrice = 0;
@@ -122,7 +114,7 @@ export const getDeltaCount = (stockList: IStockData[]) => {
     };
 
     if (stockList[0].action === 'sell') {
-        error = Error.firstSell;
+        error = Error.sellBeforeBuing;
     } else {
         startCycle(stockList);
     }
