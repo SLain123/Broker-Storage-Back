@@ -1,12 +1,14 @@
 import { Document, Schema, model } from 'mongoose';
 
-export interface IHistory extends Document {
+export interface IHistoryData {
     date: Date;
     count: number;
     pricePerSingle: number;
     fee: number;
     action: 'buy' | 'sell';
 }
+
+export interface IHistory extends Document, IHistoryData {}
 
 const history = new Schema({
     date: { type: Date, required: true },

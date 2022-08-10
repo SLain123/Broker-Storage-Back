@@ -5,7 +5,7 @@ import { Types } from 'mongoose';
 import { User } from '../models/User';
 import { IBroker, Broker, IBrokerData } from '../models/Broker';
 import { Stock, IStock, Status } from '../models/Stock';
-import { StockHistory } from '../models/StockHistory';
+import { IHistory, StockHistory } from '../models/StockHistory';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
 import { returnValidationResult } from '../utils/returnValidationResult';
@@ -434,19 +434,157 @@ router.post(
                     action === 'buy'
                         ? currentStock.broker.cash - sumBuyCost
                         : currentStock.broker.cash + sumSellCost;
-                const newSumStocks =
-                    action === 'buy'
-                        ? currentStock.broker.sumStocks + sumBuyCost
-                        : sumPrice;
                 await Broker.findByIdAndUpdate(currentStock.broker._id, {
                     cash: newCash,
-                    sumStocks: newSumStocks,
-                    sumBalance: newCash + newSumStocks,
+                    sumStocks: sumPrice,
+                    sumBalance: newCash + sumPrice,
                 });
             });
 
             return res.json({
                 message: `Action <${action}> was added in stock history`,
+            });
+        } catch (e) {
+            res.status(500).json({ message: 'Something was wrong...' });
+        }
+    },
+);
+
+// /api/stock/remove
+router.post(
+    '/remove',
+    [
+        check('id', 'ID was not recived or incorrect').custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
+    ],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
+
+            const userData = await User.findById(req.user.userId).populate([
+                {
+                    path: 'stocks',
+                    populate: { path: 'history', model: 'Stock_History' },
+                },
+                {
+                    path: 'stocks',
+                    populate: { path: 'broker' },
+                },
+            ]);
+            if (!userData) {
+                return return400(res, 'User not found');
+            }
+            const { stocks } = userData;
+            let currentStock: IStock | null = null;
+            let currentHistoryItem: IHistory | null = null;
+            let historyIndex = -1;
+            let stockIndex = -1;
+            stocks.forEach((stock, stockindex) => {
+                stock.history.forEach((historyStock, histIndex) => {
+                    if (
+                        String(historyStock._id) ===
+                        String(new Types.ObjectId(req.body.id))
+                    ) {
+                        currentStock = stock;
+                        currentHistoryItem = historyStock;
+                        historyIndex = histIndex;
+                        stockIndex = stockindex;
+                    }
+                });
+            });
+            if (!currentStock) {
+                return return400(
+                    res,
+                    "Stock doesn't belong to the user or not exists",
+                );
+            }
+
+            const { _id, broker, history } = currentStock;
+            if (broker.status !== 'active') {
+                return return400(res, 'Broker status is inactive');
+            }
+            if (historyIndex === 0 && history.length > 1) {
+                return return400(
+                    res,
+                    'Stock cannot be deleted because this operation is first and still exists other operations',
+                );
+            }
+
+            const removedHistoryItem = await StockHistory.findByIdAndDelete(
+                req.body.id,
+            );
+            if (!removedHistoryItem) {
+                return return400(
+                    res,
+                    'Item of history was not found in main stock',
+                );
+            }
+
+            if (history.length < 2) {
+                const newStockList = [
+                    ...stocks.slice(0, stockIndex),
+                    ...stocks.slice(stockIndex + 1),
+                ];
+                await Stock.findByIdAndDelete(_id);
+                await User.findByIdAndUpdate(req.user.userId, {
+                    stocks: newStockList,
+                });
+            } else {
+                const newHistoryList = [
+                    ...history.slice(0, historyIndex),
+                    ...history.slice(historyIndex + 1),
+                ];
+                const calculatedResults = getDeltaCount(newHistoryList);
+                const profitData = getProfite(calculatedResults);
+                if (profitData.error || calculatedResults.error) {
+                    return return400(res, calculatedResults.error);
+                }
+
+                const { countRest, deltaBuy, deltaSell, allFee } =
+                    calculatedResults;
+                const updatedMainStock = {
+                    status: countRest ? Status.active : Status.closed,
+                    restCount: countRest,
+                    deltaBuy,
+                    deltaSell,
+                    fee: allFee,
+                    profit: profitData.profit,
+                };
+
+                await Stock.findByIdAndUpdate(_id, {
+                    history: newHistoryList,
+                    ...updatedMainStock,
+                });
+            }
+
+            let sumPrice = 0;
+            const freshUserData = await User.findById(req.user.userId).populate(
+                {
+                    path: 'stocks',
+                },
+            );
+            freshUserData.stocks.forEach(({ deltaBuy, restCount }) => {
+                sumPrice += deltaBuy * restCount;
+            });
+
+            const { count, pricePerSingle, fee } = currentHistoryItem;
+            const newCash =
+                currentHistoryItem.action === 'buy'
+                    ? currentStock.broker.cash + (count * pricePerSingle + fee)
+                    : currentStock.broker.cash - (count * pricePerSingle - fee);
+            await Broker.findByIdAndUpdate(currentStock.broker._id, {
+                cash: newCash,
+                sumStocks: sumPrice,
+                sumBalance: newCash + sumPrice,
+            });
+
+            return res.json({
+                message: `The stock was removed`,
             });
         } catch (e) {
             res.status(500).json({ message: 'Something was wrong...' });
