@@ -10,6 +10,13 @@ export enum Status {
     closed = 'closed',
 }
 
+export enum StockType {
+    stock = 'stock',
+    bond = 'bond',
+    futures = 'futures',
+    currency = 'currency',
+}
+
 export interface IStock extends Document {
     status: Status;
     lastEditedDate: Date;
@@ -20,7 +27,7 @@ export interface IStock extends Document {
     fee: number;
     currency: ICurrency;
     broker: IBroker;
-    type: 'stock' | 'bond' | 'futures';
+    type: StockType;
     history: IHistory[];
     profit?: number;
     dividends?: IDividend[];
@@ -40,7 +47,11 @@ const stock = new Schema({
         required: true,
     },
     broker: { type: Schema.Types.ObjectId, ref: 'Broker', required: true },
-    type: { type: String, enum: ['stock', 'bond', 'futures'], required: true },
+    type: {
+        type: String,
+        enum: StockType,
+        required: true,
+    },
     history: {
         type: [Schema.Types.ObjectId],
         ref: 'StockHistory',

@@ -1,17 +1,17 @@
 import { Document, Schema, model } from 'mongoose';
 import { ICurrency } from './Currency';
 
-export interface IDividend extends Document {
-    stockTitle: string;
-    reciveDate: Date;
+export interface IDividendData {
+    date: Date;
     currency: ICurrency;
     sumPriceBuyngStoсk: number;
     payment: number;
 }
 
+export interface IDividend extends Document, IDividendData {}
+
 const dividend = new Schema({
-    stockTitle: { type: String, required: true },
-    reciveDate: { type: Date, required: true },
+    date: { type: Date, required: true },
     currency: {
         type: Schema.Types.ObjectId,
         ref: 'Currency',

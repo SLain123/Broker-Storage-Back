@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 
 import { User } from '../models/User';
 import { IBroker, Broker, IBrokerData } from '../models/Broker';
-import { Stock, IStock, Status } from '../models/Stock';
+import { Stock, IStock, Status, StockType } from '../models/Stock';
 import { IHistory, StockHistory, IHistoryData } from '../models/StockHistory';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
@@ -157,9 +157,10 @@ router.post(
                 if (filters.hasOwnProperty('type')) {
                     const { type: filterType } = filters;
                     if (
-                        filterType !== 'stock' &&
-                        filterType !== 'bond' &&
-                        filterType !== 'futures'
+                        filterType !== StockType.stock &&
+                        filterType !== StockType.bond &&
+                        filterType !== StockType.futures &&
+                        filterType !== StockType.currency
                     ) {
                         return return400(res, Error.wrongType);
                     } else {
@@ -195,7 +196,11 @@ router.post(
             Types.ObjectId.isValid(id),
         ),
         check('type', Val.missingType).custom(
-            (type) => type === 'stock' || type === 'bond' || type === 'futures',
+            (type) =>
+                type === StockType.stock ||
+                type === StockType.bond ||
+                type === StockType.futures ||
+                type === StockType.currency,
         ),
     ],
     checkAuth,
@@ -353,7 +358,7 @@ router.post(
                 }
             });
             if (!currentStock) {
-                return return400(res, Error.inexistedStock);
+                return return400(res, Error.unexistedStock);
             }
 
             if (currentStock.broker.status !== 'active') {
@@ -481,7 +486,7 @@ router.post(
                 });
             });
             if (!currentStock) {
-                return return400(res, Error.inexistedStock);
+                return return400(res, Error.unexistedStock);
             }
 
             const { _id, broker, history } = currentStock;

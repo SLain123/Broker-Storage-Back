@@ -22,12 +22,14 @@ export enum Error {
     wrongType = 'Unexisting type',
     notEnoughtCash = 'Not enough cash for purchase',
 
-    inexistedStock = "The stock doesn't belong to the user or not exists",
-    inactiveStock = 'The stock already have closed status',
+    unexistedStock = "Stock doesn't belong to the user or not exists",
+    inactiveStock = 'Stock already have closed status',
     firstStockCantBeDeleted = 'Stock cannot be deleted because this operation is first and still exists other operations',
     historyStockNotFound = 'Item of history was not found in main stock',
     sellBeforeBuing = "Error! Sell operation must't exist before buy",
     sellCountGreaterBuy = 'Error! Count of sell operations exceeds buy',
+
+    divNotFound = "Payment doesn't belong to the user or not exists",
 }
 
 export enum Success {
@@ -39,14 +41,17 @@ export enum Success {
     tokenOk = 'Token correct',
 
     brokerFound = 'Broker account(s) has been find',
-    createdBroker = 'A broker account has been created',
-    removedBroker = 'A broker account has been removed',
-    brokerChanged = 'A broker account cash or/and status was corrected',
+    createdBroker = 'Broker account has been created',
+    removedBroker = 'Broker account has been removed',
+    brokerChanged = 'Broker account cash or/and status was corrected',
 
     stockFound = 'Stoсk was found',
     stocksFound = 'Stocks were found',
-    stockCreated = 'The stock was created as purchased',
-    stockRemoved = 'The stock was removed',
+    stockCreated = 'Stock was created as purchased',
+    stockRemoved = 'Stock was removed',
+
+    dividendCreated = 'Payment was added in stock data',
+    dividendRemoved = 'Payment was removed in stock data',
 }
 
 export enum Val {
@@ -75,5 +80,6 @@ export enum Val {
     missingSinglePrice = 'Price per one of stock was not recieved',
     missingFee = "Broker's fee was not recieved",
     missingType = 'Type of stock was not recived',
-    missingAction = '"buy" or "sell" action must specifyed',
+    missingAction = '"Buy" or "Sell" action must specifyed',
+    missingPayment = 'Sum of payment was not recieved',
 }

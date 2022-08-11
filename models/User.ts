@@ -1,9 +1,8 @@
+import { IActive } from './Active';
 import { Document, Schema, model } from 'mongoose';
 import { ICurrency } from './Currency';
 import { IStock } from './Stock';
 import { IBroker } from './Broker';
-import { IDividend } from './Dividend';
-
 
 export interface IUser extends Document {
     email: string;
@@ -14,7 +13,7 @@ export interface IUser extends Document {
     avatar: string | null;
     brokerAccounts: IBroker[] | [];
     stocks: IStock[];
-    relatedPayments: IDividend[];
+    actives: IActive[];
 }
 
 const user = new Schema({
