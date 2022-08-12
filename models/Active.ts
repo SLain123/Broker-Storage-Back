@@ -1,10 +1,14 @@
 import { Document, Schema, model } from 'mongoose';
+
 import { ICurrency } from './Currency';
+import { IDividend } from './Dividend';
 
 export interface IActive extends Document {
     title: string;
     currency: ICurrency;
     cash: number;
+    dividends?: IDividend[];
+    status: 'active' | 'unactive';
 }
 
 const active = new Schema({
@@ -15,6 +19,16 @@ const active = new Schema({
         required: true,
     },
     cash: { type: Number, required: true },
+    dividends: {
+        type: [Schema.Types.ObjectId],
+        ref: 'Dividend',
+        required: false,
+    },
+    status: {
+        type: String,
+        enum: ['active', 'inactive'],
+        required: true,
+    },
 });
 
-export const Dividend = model<IActive>('Active', active);
+export const Active = model<IActive>('Active', active);

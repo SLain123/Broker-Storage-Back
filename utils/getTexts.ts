@@ -30,6 +30,7 @@ export enum Error {
     sellCountGreaterBuy = 'Error! Count of sell operations exceeds buy',
 
     divNotFound = "Payment doesn't belong to the user or not exists",
+    activeNotFound = "Active doesn't belong to the user or not exists",
 }
 
 export enum Success {
@@ -52,6 +53,9 @@ export enum Success {
 
     dividendCreated = 'Payment was added in stock data',
     dividendRemoved = 'Payment was removed in stock data',
+
+    activeCreated = 'Active was added in user data',
+    activeCorrected = 'Active data were corrected',
 }
 
 export enum Val {
@@ -69,6 +73,7 @@ export enum Val {
     missingBrokerTitle = 'Title of broker is missing',
     incorrectTitle = 'Incorrect title',
     missingStockTitle = 'Title of the stock was not received',
+    missingActiveTitle = 'Title of the active was not received',
 
     missingNick = 'User nick name is missing',
     cashNotRecived = 'Cash sum was not recived',

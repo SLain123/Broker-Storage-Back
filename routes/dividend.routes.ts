@@ -1,11 +1,10 @@
-import { IBroker } from './../models/Broker';
 import { Router, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 
 import { User } from '../models/User';
 import { Stock, IStock, Status } from '../models/Stock';
-import { Dividend, IDividend } from '../models/Dividend';
+import { Dividend } from '../models/Dividend';
 import { Broker } from '../models/Broker';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
