@@ -137,4 +137,55 @@ router.post(
     },
 );
 
+// /api/active/remove
+router.post(
+    '/remove',
+    [check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id))],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
+
+            const userData = await User.findById(req.user.userId).populate(
+                'actives',
+            );
+            if (!userData) {
+                return return400(res, Error.userNotFound);
+            }
+
+            const { actives } = userData;
+            let indexActive = -1;
+            actives.forEach((act, index) => {
+                if (
+                    String(act._id) === String(new Types.ObjectId(req.body.id))
+                ) {
+                    indexActive = index;
+                }
+            });
+            if (indexActive === -1) {
+                return return400(res, Error.activeNotFound);
+            }
+
+            const newActiveList = [
+                ...actives.slice(0, indexActive),
+                ...actives.slice(indexActive + 1),
+            ];
+
+            await Active.findByIdAndRemove(req.body.id);
+            await User.findByIdAndUpdate(req.user.userId, {
+                actives: newActiveList,
+            });
+
+            return res.json({
+                message: Success.activeRemoved,
+            });
+        } catch (e) {
+            res.status(500).json({ message: Error.somethingWrong });
+        }
+    },
+);
+
 export = router;
