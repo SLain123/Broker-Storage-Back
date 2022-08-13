@@ -60,6 +60,8 @@ export enum Success {
     activeCreated = 'Active was added in user data',
     activeCorrected = 'Active data were corrected',
     activeRemoved = 'Active was removed from user data',
+    activesFound = 'Actives were found',
+    activeFound = 'Active was found',
 }
 
 export enum Val {

@@ -14,6 +14,112 @@ import { Error, Success, Val } from '../utils/getTexts';
 
 const router = Router();
 
+// /api/active/
+router.post(
+    '/',
+    [check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id))],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const userData = await User.findById(req.user.userId).populate({
+                path: 'actives',
+                populate: 'dividends',
+            });
+            if (!userData) {
+                return return400(res, Error.userNotFound);
+            }
+
+            const active = userData.actives.filter(
+                ({ _id }) =>
+                    String(new Types.ObjectId(req.body.id)) ===
+                    String(new Types.ObjectId(_id)),
+            );
+
+            if (active.length < 1) {
+                return return400(res, Error.activeNotFound);
+            }
+
+            return res.json({
+                message: Success.activeFound,
+                active,
+            });
+        } catch (e) {
+            res.status(500).json({ message: Error.somethingWrong });
+        }
+    },
+);
+
+// /api/active/all
+router.post(
+    '/all',
+    [
+        check('filters', Val.incorrectFilters)
+            .optional()
+            .isObject()
+            .custom(
+                (obj: Object) =>
+                    obj.hasOwnProperty('currencyId') ||
+                    obj.hasOwnProperty('status'),
+            ),
+    ],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
+
+            const result = await User.findById(req.user.userId).populate([
+                {
+                    path: 'actives',
+                    populate: { path: 'dividends', model: 'Dividend' },
+                },
+                { path: 'actives', populate: 'currency' },
+            ]);
+
+            if (!result) {
+                return return400(res, Error.userNotFound);
+            }
+            const { filters } = req.body;
+            let { actives } = result;
+
+            if (filters) {
+                if (filters.hasOwnProperty('currencyId')) {
+                    const { currencyId } = filters;
+                    if (!Types.ObjectId.isValid(currencyId)) {
+                        return return400(res, Error.wrongCurrencyId);
+                    } else {
+                        actives = actives.filter(
+                            ({ currency }) =>
+                                String(new Types.ObjectId(currency._id)) ===
+                                String(new Types.ObjectId(currencyId)),
+                        );
+                    }
+                }
+
+                if (filters.hasOwnProperty('status')) {
+                    const { status: stat } = filters;
+                    if (stat !== 'active' && stat !== 'inactive') {
+                        return return400(res, Error.wrongStatus);
+                    } else {
+                        actives = actives.filter(
+                            ({ status }) => stat === status,
+                        );
+                    }
+                }
+            }
+
+            return res.json({
+                message: Success.activesFound,
+                actives,
+            });
+        } catch (e) {
+            res.status(500).json({ message: Error.somethingWrong });
+        }
+    },
+);
+
 // /api/active/create
 router.post(
     '/create',
