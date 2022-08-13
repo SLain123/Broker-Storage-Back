@@ -153,7 +153,7 @@ router.post(
         check('cash', Val.cashNotRecived).isFloat({ min: 0 }),
         check('status', Val.incorrectStatus)
             .optional()
-            .custom((status) => status === 'active' || status === 'unactive'),
+            .custom((status) => status === 'active' || status === 'inactive'),
     ],
     checkAuth,
     async (req: Request, res: Response) => {

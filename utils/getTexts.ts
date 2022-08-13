@@ -30,7 +30,10 @@ export enum Error {
     sellCountGreaterBuy = 'Error! Count of sell operations exceeds buy',
 
     divNotFound = "Payment doesn't belong to the user or not exists",
+
     activeNotFound = "Active doesn't belong to the user or not exists",
+    unexistedActive = "Active doesn't belong to the user or not exists",
+    inactiveActive = 'Active already have closed status',
 }
 
 export enum Success {
@@ -51,8 +54,8 @@ export enum Success {
     stockCreated = 'Stock was created as purchased',
     stockRemoved = 'Stock was removed',
 
-    dividendCreated = 'Payment was added in stock data',
-    dividendRemoved = 'Payment was removed in stock data',
+    dividendCreated = 'Payment was added in user data',
+    dividendRemoved = 'Payment was removed from user data',
 
     activeCreated = 'Active was added in user data',
     activeCorrected = 'Active data were corrected',

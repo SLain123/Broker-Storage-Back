@@ -3,12 +3,17 @@ import { Document, Schema, model } from 'mongoose';
 import { ICurrency } from './Currency';
 import { IDividend } from './Dividend';
 
+export enum Status {
+    active = 'active',
+    closed = 'closed',
+}
+
 export interface IActive extends Document {
     title: string;
     currency: ICurrency;
     cash: number;
     dividends?: IDividend[];
-    status: 'active' | 'unactive';
+    status: Status;
 }
 
 const active = new Schema({

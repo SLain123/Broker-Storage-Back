@@ -11,6 +11,7 @@ import * as brokerRoutes from './routes/broker.routes';
 import * as stockRoutes from './routes/stock.routes';
 import * as dividendRoutes from './routes/dividend.routes';
 import * as activeRoutes from './routes/active.routes';
+import * as activePaymentRoutes from './routes/activePayment.routes';
 
 const app = express();
 dotenv.config();
@@ -58,6 +59,7 @@ app.use('/api/broker', brokerRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/dividend', dividendRoutes);
 app.use('/api/active', activeRoutes);
+app.use('/api/active/pay', activePaymentRoutes);
 
 async function start() {
     try {
