@@ -1,10 +1,10 @@
-import { IActive } from './../models/Active';
 import { Router, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 
 import { User } from '../models/User';
 import { Currency } from '../models/Currency';
+import { IActive } from './../models/Active';
 import { Active } from '../models/Active';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';

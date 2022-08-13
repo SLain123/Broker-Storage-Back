@@ -93,4 +93,6 @@ export enum Val {
     missingType = 'Type of stock was not recived',
     missingAction = '"Buy" or "Sell" action must specifyed',
     missingPayment = 'Sum of payment was not recieved',
+
+    wrongYear = 'Year must be between 2000 and 2100',
 }
