@@ -56,6 +56,7 @@ export enum Success {
 
     dividendCreated = 'Payment was added in user data',
     dividendRemoved = 'Payment was removed from user data',
+    calculatedDividendAct = 'All amoungs of payments from actives was calculated',
 
     activeCreated = 'Active was added in user data',
     activeCorrected = 'Active data were corrected',
@@ -95,4 +96,6 @@ export enum Val {
     missingPayment = 'Sum of payment was not recieved',
 
     wrongYear = 'Year must be between 2000 and 2100',
+    wrongType = 'Type might be stock or bond',
+    wrongBool = 'This value must be true or false',
 }

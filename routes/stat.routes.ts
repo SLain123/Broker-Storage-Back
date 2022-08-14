@@ -77,4 +77,80 @@ router.post(
     },
 );
 
+// /api/stat/dividends/active
+router.post(
+    '/dividends/active',
+    [
+        check('byYear', Val.wrongYear)
+            .optional()
+            .isInt({ min: 2000, max: 2100 }),
+        // check('byType', Val.wrongType)
+        //     .optional()
+        //     .custom((type) => type === 'stock' || type === 'bond'),
+    ],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
+
+            const userData = await User.findById(req.user.userId).populate([
+                {
+                    path: 'actives',
+                    populate: { path: 'dividends', model: 'Dividend' },
+                },
+                {
+                    path: 'actives',
+                    populate: 'currency',
+                },
+            ]);
+            if (!userData) {
+                return return400(res, Error.userNotFound);
+            }
+
+            const { byYear } = req.body;
+            const tempStore = {};
+
+            userData.actives.forEach((act) => {
+                const { title, currency } = act;
+                tempStore[title] = {
+                    title,
+                    currency,
+                    allPayments: 0,
+                    totalAmountOfInvest: 0,
+                };
+
+                act.dividends.forEach((div) => {
+                    const { payment, sumPriceBuyngStoсk, date } = div;
+                    const year = date.getFullYear();
+                    const { allPayments, totalAmountOfInvest } =
+                        tempStore[title];
+
+                    if (byYear) {
+                        if (byYear === year) {
+                            tempStore[title].allPayments =
+                                allPayments + payment;
+                            tempStore[title].totalAmountOfInvest =
+                                totalAmountOfInvest + sumPriceBuyngStoсk;
+                        }
+                    } else {
+                        tempStore[title].allPayments = allPayments + payment;
+                        tempStore[title].totalAmountOfInvest =
+                            totalAmountOfInvest + sumPriceBuyngStoсk;
+                    }
+                });
+            });
+
+            return res.json({
+                message: Success.calculatedDividendAct,
+                result: Object.values(tempStore),
+            });
+        } catch (e) {
+            res.status(500).json({ message: Error.somethingWrong });
+        }
+    },
+);
+
 export = router;
