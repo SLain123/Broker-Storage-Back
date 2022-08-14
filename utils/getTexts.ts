@@ -53,6 +53,7 @@ export enum Success {
     stocksFound = 'Stocks were found',
     stockCreated = 'Stock was created as purchased',
     stockRemoved = 'Stock was removed',
+    calculatedDividendStock = 'All amoungs of payments from stocks was calculated',
 
     dividendCreated = 'Payment was added in user data',
     dividendRemoved = 'Payment was removed from user data',
