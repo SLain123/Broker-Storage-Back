@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
+import { Types } from 'mongoose';
 
 import { User } from '../models/User';
 import { checkAuth } from '../middleware/auth.middleware';
@@ -219,6 +220,135 @@ router.post(
             return res.json({
                 message: Success.calculatedDividendStock,
                 result: Object.values(tempStore),
+            });
+        } catch (e) {
+            res.status(500).json({ message: Error.somethingWrong });
+        }
+    },
+);
+
+// /api/stat/profit
+router.post(
+    '/profit',
+    [
+        check('filters', Val.incorrectFilters)
+            .optional()
+            .isObject()
+            .custom(
+                (obj: Object) =>
+                    obj.hasOwnProperty('brokerId') ||
+                    obj.hasOwnProperty('currencyId') ||
+                    obj.hasOwnProperty('year') ||
+                    obj.hasOwnProperty('plusInactiveBrokers') ||
+                    obj.hasOwnProperty('plusDividends'),
+            ),
+    ],
+    checkAuth,
+    async (req: Request, res: Response) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return returnValidationResult(res, errors);
+            }
+
+            const { filters } = req.body;
+
+            const userData = await User.findById(req.user.userId).populate([
+                {
+                    path: 'stocks',
+                    populate: { path: 'dividends', model: 'Dividend' },
+                },
+                {
+                    path: 'stocks',
+                    populate: 'currency',
+                },
+                {
+                    path: 'stocks',
+                    populate: 'broker',
+                },
+            ]);
+            if (!userData) {
+                return return400(res, Error.userNotFound);
+            }
+
+            let filtredList = userData.stocks.filter(
+                ({ status }) => status === 'closed',
+            );
+
+            if (!filters?.plusInactiveBrokers) {
+                filtredList = filtredList.filter(
+                    ({ broker }) => broker.status === 'active',
+                );
+            }
+
+            if (filters) {
+                if (filters.hasOwnProperty('brokerId')) {
+                    const { brokerId } = filters;
+                    if (!Types.ObjectId.isValid(brokerId)) {
+                        return return400(res, Error.wrongBrokerId);
+                    } else {
+                        filtredList = filtredList.filter(
+                            ({ broker }) =>
+                                String(new Types.ObjectId(broker._id)) ===
+                                String(new Types.ObjectId(brokerId)),
+                        );
+                    }
+                }
+
+                if (filters.hasOwnProperty('currencyId')) {
+                    const { currencyId } = filters;
+                    if (!Types.ObjectId.isValid(currencyId)) {
+                        return return400(res, Error.wrongCurrencyId);
+                    } else {
+                        filtredList = filtredList.filter(
+                            ({ currency }) =>
+                                String(new Types.ObjectId(currency._id)) ===
+                                String(new Types.ObjectId(currencyId)),
+                        );
+                    }
+                }
+
+                if (filters.hasOwnProperty('year')) {
+                    const { year } = filters;
+                    if (isNaN(+year) || String(year).length !== 4) {
+                        return return400(res, Error.wrongYear);
+                    } else {
+                        filtredList = filtredList.filter(
+                            ({ lastEditedDate }) => {
+                                return lastEditedDate.getFullYear() === +year;
+                            },
+                        );
+                    }
+                }
+            }
+
+            let sumProfit = 0;
+            filtredList.forEach(({ profit, dividends }) => {
+                sumProfit += profit;
+
+                if (filters) {
+                    if (filters.hasOwnProperty('plusDividends'))
+                        if (filters.hasOwnProperty('year')) {
+                            const { year } = filters;
+
+                            dividends.forEach(({ payment, date }) => {
+                                const lastYear = date.getFullYear();
+                                if (year === lastYear) {
+                                    sumProfit += payment;
+                                }
+                            });
+                        } else {
+                            dividends.forEach(({ payment }) => {
+                                sumProfit += payment;
+                            });
+                        }
+                }
+            });
+
+            return res.json({
+                message: Success.profitCalculated,
+                sumProfit,
+                filtredList,
             });
         } catch (e) {
             res.status(500).json({ message: Error.somethingWrong });

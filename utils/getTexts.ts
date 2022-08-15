@@ -64,6 +64,8 @@ export enum Success {
     activeRemoved = 'Active was removed from user data',
     activesFound = 'Actives were found',
     activeFound = 'Active was found',
+
+    profitCalculated = 'Sum of profit was calculated',
 }
 
 export enum Val {
