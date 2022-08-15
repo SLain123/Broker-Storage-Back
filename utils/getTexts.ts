@@ -30,6 +30,7 @@ export enum Error {
     sellCountGreaterBuy = 'Error! Count of sell operations exceeds buy',
 
     divNotFound = "Payment doesn't belong to the user or not exists",
+    incorrectTypeForCreateDiv = "Payment can be create only for stock or bond types of stocks",
 
     activeNotFound = "Active doesn't belong to the user or not exists",
     unexistedActive = "Active doesn't belong to the user or not exists",

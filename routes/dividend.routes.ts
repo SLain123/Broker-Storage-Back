@@ -52,12 +52,16 @@ router.post(
                 return return400(res, Error.unexistedStock);
             }
 
-            const { deltaBuy, currency, restCount, broker } = currentStock;
-            if (currentStock.broker.status !== 'active') {
+            const { deltaBuy, currency, restCount, broker, status, type } =
+                currentStock;
+            if (broker.status !== 'active') {
                 return return400(res, Error.inactiveBroker);
             }
-            if (currentStock.status !== Status.active) {
+            if (status !== Status.active) {
                 return return400(res, Error.inactiveStock);
+            }
+            if (type !== 'stock' && type !== 'bond') {
+                return return400(res, Error.incorrectTypeForCreateDiv);
             }
 
             const dividendDate = {
