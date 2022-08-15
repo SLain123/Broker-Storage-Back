@@ -88,9 +88,13 @@ router.post(
                 return return400(res, Error.incorrectPassword);
             }
 
-            const token = sign({ userId: user.id }, process.env.JWT_SECRET, {
-                expiresIn: '10d',
-            });
+            const token = sign(
+                { userId: user.id },
+                process.env.JWT_SECRET || 'superSecret',
+                {
+                    expiresIn: '10d',
+                },
+            );
 
             res.json({
                 token,
