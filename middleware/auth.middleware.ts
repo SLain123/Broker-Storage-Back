@@ -18,7 +18,7 @@ export const checkAuth = (req: Request, res: Response, next: NextFunction) => {
 
         const decoded = verify(
             token.replace('Bearer ', ''),
-            process.env.JWT_SECRET || 'superSecret',
+            process.env.JWT_SECRET,
         );
         req.user = decoded;
         next();
