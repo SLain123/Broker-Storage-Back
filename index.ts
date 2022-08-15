@@ -17,7 +17,9 @@ import * as statRoutes from './routes/stat.routes';
 const app = express();
 dotenv.config();
 const PORT = process.env.PORT || 5000;
-const MONGOURI = process.env.MONGO_URI;
+const MONGOURI =
+    process.env.MONGO_URI ||
+    'mongodb+srv://Admin:111111sl@cluster0.flch8ls.mongodb.net/broker?retryWrites=true&w=majority';
 
 declare global {
     namespace Express {
