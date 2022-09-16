@@ -22,9 +22,25 @@ router.get('/', checkAuth, async (req: Request, res: Response) => {
             return return400(res, Error.userNotFound);
         }
 
+        const {
+            email,
+            nickName,
+            defaultCurrency,
+            role,
+            avatar,
+            brokerAccounts,
+        } = user;
+
         return res.json({
             message: Success.userFound,
-            user,
+            user: {
+                email,
+                nickName,
+                defaultCurrency,
+                role,
+                avatar,
+                brokerAccounts,
+            },
         });
     } catch (e) {
         res.status(500).json({ message: Error.somethingWrong });
