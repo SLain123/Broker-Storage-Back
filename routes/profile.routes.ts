@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator';
+import { Types } from 'mongoose';
 
+import { Currency } from '../models/Currency';
 import { User } from '../models/User';
 import { checkAuth } from '../middleware/auth.middleware';
 import { return400 } from '../utils/return400';
@@ -50,7 +52,12 @@ router.get('/', checkAuth, async (req: Request, res: Response) => {
 // /api/profile
 router.post(
     '/',
-    [check('nickName', Val.missingNick).isString()],
+    [
+        check('nickName', Val.missingNick).isString(),
+        check('defaultCurrencyId', Val.incorrectDefCurrencyId).custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
+    ],
     checkAuth,
     async (req: Request, res: Response) => {
         try {
@@ -59,10 +66,15 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { nickName } = req.body;
+            const { nickName, defaultCurrencyId } = req.body;
+            const currency = await Currency.findById(defaultCurrencyId);
+            if (!currency) {
+                return return400(res, Error.currencyNotFound);
+            }
 
             const result = await User.findByIdAndUpdate(req.user.userId, {
                 nickName,
+                defaultCurrency: currency,
             });
             if (!result) {
                 return return400(res, Error.userNotFound);
