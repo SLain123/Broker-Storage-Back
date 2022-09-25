@@ -151,6 +151,9 @@ router.post(
         check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id)),
         check('title', Val.incorrectTitle).optional().isString().notEmpty(),
         check('cash', Val.cashNotRecived).isFloat({ min: 0 }),
+        check('currencyId', Val.incorrectCurrencyId).custom((id) =>
+            Types.ObjectId.isValid(id),
+        ),
         check('status', Val.incorrectStatus)
             .optional()
             .custom((status) => status === 'active' || status === 'inactive'),
@@ -163,13 +166,18 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const { id, title, cash, status = 'active' } = req.body;
+            const { id, title, cash, status = 'active', currencyId } = req.body;
 
             const userData = await User.findById(req.user.userId).populate(
                 'brokerAccounts',
             );
             if (!userData) {
                 return return400(res, Error.userNotFound);
+            }
+
+            const currency = await Currency.findById(currencyId);
+            if (!currency) {
+                return return400(res, Error.currencyNotFound);
             }
 
             let currentSumStocks = 0;
@@ -194,6 +202,7 @@ router.post(
                 cash,
                 status,
                 sumBalance: Number(cash) + Number(currentSumStocks),
+                currency,
             });
 
             return res.json({
