@@ -35,7 +35,7 @@ router.post(
                         populate: { path: 'currency' },
                     },
                 },
-                { path: 'stocks', populate: 'currency' },
+                { path: 'stocks', populate: { path: 'currency' } },
                 {
                     path: 'stocks',
                     populate: { path: 'history', model: 'Stock_History' },
@@ -98,9 +98,9 @@ router.post(
                         populate: { path: 'currency' },
                     },
                 },
-                { path: 'stocks', populate: 'currency' },
+                { path: 'stocks', populate: { path: 'currency' } },
             ]);
-
+            console.log(result);
             if (!result) {
                 return return400(res, Error.userNotFound);
             }
