@@ -58,7 +58,7 @@ router.post(
 
             return res.json({
                 message: Success.stockFound,
-                stock,
+                stock: stock[0],
             });
         } catch (e) {
             res.status(500).json({ message: Error.somethingWrong });
