@@ -40,6 +40,10 @@ router.post(
                     path: 'stocks',
                     populate: { path: 'history', model: 'Stock_History' },
                 },
+                {
+                    path: 'stocks',
+                    populate: { path: 'dividends', model: 'Dividend' },
+                },
             ]);
 
             if (!result) {
