@@ -41,7 +41,7 @@ router.post(
 
             return res.json({
                 message: Success.activeFound,
-                active,
+                active: active[0],
             });
         } catch (e) {
             res.status(500).json({ message: Error.somethingWrong });
