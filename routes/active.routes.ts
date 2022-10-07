@@ -21,10 +21,10 @@ router.post(
     checkAuth,
     async (req: Request, res: Response) => {
         try {
-            const userData = await User.findById(req.user.userId).populate({
-                path: 'actives',
-                populate: 'dividends',
-            });
+            const userData = await User.findById(req.user.userId).populate([
+                { path: 'actives', populate: { path: 'currency' } },
+                { path: 'actives', populate: { path: 'dividends' } },
+            ]);
             if (!userData) {
                 return return400(res, Error.userNotFound);
             }
@@ -70,13 +70,10 @@ router.post(
                 return returnValidationResult(res, errors);
             }
 
-            const result = await User.findById(req.user.userId).populate([
-                {
-                    path: 'actives',
-                    populate: { path: 'dividends', model: 'Dividend' },
-                },
-                { path: 'actives', populate: 'currency' },
-            ]);
+            const result = await User.findById(req.user.userId).populate({
+                path: 'actives',
+                populate: 'currency',
+            });
 
             if (!result) {
                 return return400(res, Error.userNotFound);
