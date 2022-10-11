@@ -28,7 +28,10 @@ router.post(
                     path: 'stocks',
                     populate: { path: 'broker', model: 'Broker' },
                 },
-                { path: 'stocks', populate: 'currency' },
+                {
+                    path: 'stocks',
+                    populate: { path: 'currency', model: 'Currency' },
+                },
             ]);
             if (!userData) {
                 return return400(res, Error.userNotFound);
@@ -81,14 +84,7 @@ router.post(
 // /api/stat/dividends/active
 router.post(
     '/dividends/active',
-    [
-        check('byYear', Val.wrongYear)
-            .optional()
-            .isInt({ min: 2000, max: 2100 }),
-        // check('byType', Val.wrongType)
-        //     .optional()
-        //     .custom((type) => type === 'stock' || type === 'bond'),
-    ],
+    [check('byYear', Val.wrongYear).optional().isInt({ min: 2000, max: 2100 })],
     checkAuth,
     async (req: Request, res: Response) => {
         try {
@@ -104,7 +100,7 @@ router.post(
                 },
                 {
                     path: 'actives',
-                    populate: 'currency',
+                    populate: { path: 'currency', model: 'Currency' },
                 },
             ]);
             if (!userData) {
@@ -173,7 +169,7 @@ router.post(
                 },
                 {
                     path: 'stocks',
-                    populate: 'currency',
+                    populate: { path: 'currency', model: 'Currency' },
                 },
             ]);
             if (!userData) {
@@ -260,11 +256,11 @@ router.post(
                 },
                 {
                     path: 'stocks',
-                    populate: 'currency',
+                    populate: { path: 'currency', model: 'Currency' },
                 },
                 {
                     path: 'stocks',
-                    populate: 'broker',
+                    populate: { path: 'broker', model: 'Broker' },
                 },
             ]);
             if (!userData) {
