@@ -151,9 +151,9 @@ router.post(
         check('id', Val.incorrectId).custom((id) => Types.ObjectId.isValid(id)),
         check('title', Val.incorrectTitle).optional().isString().notEmpty(),
         check('cash', Val.cashNotRecived).isFloat({ min: 0 }),
-        check('currencyId', Val.incorrectCurrencyId).custom((id) =>
-            Types.ObjectId.isValid(id),
-        ),
+        check('currencyId', Val.incorrectCurrencyId)
+            .optional()
+            .custom((id) => Types.ObjectId.isValid(id)),
         check('status', Val.incorrectStatus)
             .optional()
             .custom((status) => status === 'active' || status === 'inactive'),
@@ -175,11 +175,6 @@ router.post(
                 return return400(res, Error.userNotFound);
             }
 
-            const currency = await Currency.findById(currencyId);
-            if (!currency) {
-                return return400(res, Error.currencyNotFound);
-            }
-
             let currentSumStocks = 0;
             let oldTitle = '';
             let findIndex = -1;
@@ -195,6 +190,15 @@ router.post(
             });
             if (findIndex === -1) {
                 return return400(res, Error.brokerNotFound);
+            }
+
+            const currency = await Currency.findById(
+                currencyId
+                    ? currencyId
+                    : brokerAccounts[findIndex].currency._id,
+            );
+            if (!currency) {
+                return return400(res, Error.unexistedCurrency);
             }
 
             await Broker.findByIdAndUpdate(id, {
