@@ -429,7 +429,7 @@ router.post(
                         }
                     },
                 );
-                
+
                 const newCash =
                     action === 'buy'
                         ? currentStock.broker.cash - sumBuyCost
@@ -555,8 +555,10 @@ router.post(
                     path: 'stocks',
                 },
             );
-            freshUserData.stocks.forEach(({ deltaBuy, restCount }) => {
-                sumPrice += deltaBuy * restCount;
+            freshUserData.stocks.forEach(({ deltaBuy, restCount, broker }) => {
+                if (broker.id === currentStock.broker._id) {
+                    sumPrice += deltaBuy * restCount;
+                }
             });
 
             const { count, pricePerSingle, fee } = currentHistoryItem;
