@@ -422,10 +422,14 @@ router.post(
                 ).populate({
                     path: 'stocks',
                 });
-                freshUserData.stocks.forEach(({ deltaBuy, restCount }) => {
-                    sumPrice += deltaBuy * restCount;
-                });
-
+                freshUserData.stocks.forEach(
+                    ({ deltaBuy, restCount, broker }) => {
+                        if (broker.id === currentStock.broker._id) {
+                            sumPrice += deltaBuy * restCount;
+                        }
+                    },
+                );
+                
                 const newCash =
                     action === 'buy'
                         ? currentStock.broker.cash - sumBuyCost
