@@ -416,28 +416,21 @@ router.post(
                     },
                 });
 
-                let sumPrice = 0;
-                const freshUserData = await User.findById(
-                    req.user.userId,
-                ).populate({
-                    path: 'stocks',
-                });
-                freshUserData.stocks.forEach(
-                    ({ deltaBuy, restCount, broker }) => {
-                        if (broker.id === currentStock.broker._id) {
-                            sumPrice += deltaBuy * restCount;
-                        }
-                    },
-                );
-
                 const newCash =
                     action === 'buy'
                         ? currentStock.broker.cash - sumBuyCost
                         : currentStock.broker.cash + sumSellCost;
+                const newSumStock =
+                    action === 'buy'
+                        ? currentStock.broker.sumStocks +
+                          (count * pricePerSingle + fee)
+                        : currentStock.broker.sumStocks -
+                          (count * pricePerSingle + fee);
+
                 await Broker.findByIdAndUpdate(currentStock.broker._id, {
                     cash: newCash,
-                    sumStocks: sumPrice,
-                    sumBalance: newCash + sumPrice,
+                    sumStocks: newSumStock,
+                    sumBalance: newCash + newSumStock,
                 });
             });
 
