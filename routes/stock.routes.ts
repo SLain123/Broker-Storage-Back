@@ -549,27 +549,22 @@ router.post(
                 });
             }
 
-            let sumPrice = 0;
-            const freshUserData = await User.findById(req.user.userId).populate(
-                {
-                    path: 'stocks',
-                },
-            );
-            freshUserData.stocks.forEach(({ deltaBuy, restCount, broker }) => {
-                if (broker.id === currentStock.broker._id) {
-                    sumPrice += deltaBuy * restCount;
-                }
-            });
-
             const { count, pricePerSingle, fee } = currentHistoryItem;
             const newCash =
                 currentHistoryItem.action === 'buy'
                     ? currentStock.broker.cash + (count * pricePerSingle + fee)
                     : currentStock.broker.cash - (count * pricePerSingle - fee);
+            const newSumStock =
+                currentHistoryItem.action === 'buy'
+                    ? currentStock.broker.sumStocks -
+                      (count * pricePerSingle + fee)
+                    : currentStock.broker.sumStocks +
+                      (count * pricePerSingle + fee);
+
             await Broker.findByIdAndUpdate(currentStock.broker._id, {
                 cash: newCash,
-                sumStocks: sumPrice,
-                sumBalance: newCash + sumPrice,
+                sumStocks: newSumStock,
+                sumBalance: newCash + newSumStock,
             });
 
             return res.json({
